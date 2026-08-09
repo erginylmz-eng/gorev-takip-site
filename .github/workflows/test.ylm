@@ -1,0 +1,38 @@
+name: Otomatik Testler
+
+# Bu dosya gorev-takip-site reposunun .github/workflows/test.yml dosyası olarak eklenmelidir
+# (index.html ile aynı repo, kök dizinde .github/workflows/test.yml).
+#
+# index.html'e her push/PR geldiğinde, uygulamanın mantığını doğrulayan ~20 test dosyasını
+# çalıştırır (hesaplama formülleri, döngü koruması, dosya güvenliği, ESC davranışı, vb.).
+# Herhangi biri başarısız olursa bu iş kırmızı (failed) görünür — Netlify'a hatalı bir sürüm
+# gitmeden önce fark edilir. Hiçbir npm paketi kurulumu gerekmez (testler sade Node.js ile
+# yazıldı), bu yüzden çok hızlı çalışır ve tamamen ücretsizdir.
+
+on:
+  push:
+    paths:
+      - 'index.html'
+      - '**/*_test.js'
+  pull_request: {}
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Testleri calistir
+        run: |
+          fail=0
+          for f in *_test.js; do
+            echo "=== $f ==="
+            node "$f" || fail=1
+          done
+          if [ "$fail" -eq 1 ]; then
+            echo "Bir veya daha fazla test basarisiz oldu."
+            exit 1
+          fi
