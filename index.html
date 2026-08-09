@@ -260,6 +260,26 @@
   @keyframes mic-pulse{0%{box-shadow:0 0 0 0 rgba(220,38,38,.5);}70%{box-shadow:0 0 0 8px rgba(220,38,38,0);}100%{box-shadow:0 0 0 0 rgba(220,38,38,0);}}
   .hint{font-size:11px;color:var(--sub);margin-top:4px;}
   .disabled-note{font-size:11.5px;color:var(--warn);margin-top:4px;}
+
+  /* Görev/alt görev/mini görev mantığı yeniden kurulumu (madde 11): modal artık ayrı, görsel
+     olarak birbirinden ayrılmış bölümlere ayrılıyor. */
+  .modal-section{padding-top:16px;margin-top:16px;border-top:1px solid var(--line);}
+  .modal-section:first-of-type{padding-top:0;margin-top:0;border-top:none;}
+  .modal-section-title{font-size:12.5px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;}
+  /* Madde 2, 3: mini görev / alt görev eklenmiş bir görevde Durum Etiketi ve/veya Mini Görevler
+     alanı elle düzenlenemez hale gelir; bunun yerine bu pasif bilgi kutusu gösterilir. */
+  .passive-box{background:var(--card2);color:var(--sub);border:1px dashed var(--line);border-radius:8px;padding:11px 12px;font-size:13px;font-style:italic;}
+  .checkbox-label{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;color:var(--ink);cursor:pointer;}
+  .checkbox-label input[type=checkbox]{width:18px;height:18px;flex-shrink:0;}
+  /* Madde 8: tamamlanma oranı göstergesi (yüzde metni ve el ile ayarlanan kaydırıcı) 3 kat
+     büyütüldü — normal metin ~13px iken burada ~38px; kaydırıcı tutamacı da orantılı büyütüldü. */
+  .progress-big-value{font-size:38px;font-weight:800;color:var(--ink);margin-top:8px;line-height:1.2;}
+  .progress-big-slider{-webkit-appearance:none;appearance:none;width:100%;height:18px;border-radius:9px;background:var(--line);margin-top:10px;cursor:pointer;}
+  .progress-big-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:42px;height:42px;border-radius:50%;background:var(--blue);cursor:pointer;border:4px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.3);}
+  .progress-big-slider::-moz-range-thumb{width:42px;height:42px;border-radius:50%;background:var(--blue);cursor:pointer;border:4px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.3);}
+  .progress-big-slider::-moz-range-track{height:18px;border-radius:9px;background:var(--line);}
+  .icon-btn:disabled{opacity:.35;cursor:not-allowed;}
+  .icon-btn:disabled:hover{background:none;color:inherit;}
   footer{text-align:center;color:var(--sub);font-size:11.5px;padding:20px;}
   #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1c2536;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:100;max-width:90vw;text-align:center;}
   #toast.show{opacity:1;transform:translate(-50%,-4px);}
@@ -572,7 +592,7 @@ varsa işaretli oranı, (3) o da yoksa manualProgress alanından ELLE girilen de
 // tam değişiklik geçmişi repo kökündeki CHANGELOG.md dosyasında (Keep a Changelog biçiminde)
 // tutulur. Sürüm numarası sayfanın üst kısmında küçük bir etiket olarak gösterilir ki hangi
 // sürümün canlıda olduğu bir bakışta anlaşılsın (örn. destek/hata bildirimi sırasında faydalı).
-const APP_VERSION = '1.9.2';
+const APP_VERSION = '1.9.3';
 if(typeof document !== 'undefined' && document.getElementById){
   const versionTagEl = document.getElementById('appVersionTag');
   if(versionTagEl) versionTagEl.textContent = 'v' + APP_VERSION;
@@ -1320,7 +1340,7 @@ function renderTaskNode(task, depth){
         </div>
       </div>
       <div class="task-actions">
-        <button class="icon-btn" title="Alt görev ekle" aria-label="Alt görev ekle" data-addsub="${task.id}">➕</button>
+        <button class="icon-btn" title="${hasChecklist ? 'Mini görevleri olan bir göreve alt görev eklenemez' : 'Alt görev ekle'}" aria-label="${hasChecklist ? 'Mini görevleri olan bir göreve alt görev eklenemez' : 'Alt görev ekle'}" data-addsub="${task.id}" ${hasChecklist ? 'disabled' : ''}>➕</button>
         <button class="icon-btn" title="Sil" aria-label="Görevi sil" data-del="${task.id}">🗑️</button>
       </div>
     </div>
@@ -1346,6 +1366,13 @@ function attachTaskNodeEvents(root){
       e.stopPropagation();
       const parentId = el.getAttribute('data-addsub');
       const parent = state.tasks.find(t=>t.id===parentId);
+      // Madde 1: bir görevde ya mini görev ya da alt görev olabilir. Buton zaten görsel olarak
+      // pasif gösteriliyor (bkz. renderTaskNode), ama gerçek koruma burada — disabled niteliği
+      // gerçek bir tarayıcıda tıklamayı zaten engeller, burada ayrıca kontrol ediyoruz.
+      if(parent.checklist && parent.checklist.length > 0){
+        alert('Bu görevde mini görevler (kontrol listesi) var. Bir görevde ya mini görev ya da alt görev olabilir; alt görev eklemeden önce mini görevleri kaldırmalısınız.');
+        return;
+      }
       openModal({categoryId: parent.categoryId, parentId});
     });
   });
@@ -1555,6 +1582,19 @@ function openModal(opts){
   // (dakika + opsiyonel not) temsil eder; toplam harcanan süre bu kayıtların toplamından hesaplanır.
   let modalTimeLog = (isEdit && task.timeLog) ? task.timeLog.map(l=>({...l})) : [];
 
+  // Süre takibi artık her görevde varsayılan AÇIK değil — kullanıcı açıkça "istiyorum" demedikçe
+  // pasif kalır (mükerrer/gereksiz veri girişini önlemek için). Daha önceden zaman kaydı girilmiş
+  // bir görev varsa (eski veri), geriye dönük olarak açık kabul edilir ki mevcut kayıtlar "kaybolmuş"
+  // gibi görünmesin.
+  let modalTimeTrackingEnabled = isEdit ? !!(task.timeTrackingEnabled || (task.timeLog && task.timeLog.length>0)) : false;
+
+  // Durum etiketi (statusTag) artık HER ZAMAN elle seçilebilir değil: bir görevde mini görev
+  // (kontrol listesi) ya da alt görev varsa, o görevin durumu/tamamlanma oranı bunlardan otomatik
+  // türetilir — elle "Tamamlandı" gibi bir değer seçilmesi anlamsız (hatta yanıltıcı) olur. Bu
+  // yüzden f_statustag artık statik değil, renderStatusTagField() ile dinamik kuruluyor; seçilen
+  // değer modalStatusTag değişkeninde tutulur (element pasif olduğunda DOM'da hiç var olmayabilir).
+  let modalStatusTag = (isEdit && task.statusTag) ? task.statusTag : 'not_started';
+
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.id = 'modalOverlay';
@@ -1562,104 +1602,129 @@ function openModal(opts){
     <div class="modal modal-lg">
       <h2>${isEdit ? 'Görevi Düzenle' : (parentTask ? 'Alt Görev Ekle' : 'Yeni Görev Ekle')}</h2>
       ${parentTask ? `<div class="hint" style="margin-bottom:10px;">Üst görev: <b>${escapeHtml(parentTask.title)}</b>${(parentMin||parentMax) ? ` — tarih aralığı: ${fmtDate(parentMin)} – ${fmtDate(parentMax)}` : ''}</div>` : ''}
-      <div class="field">
-        <label>Başlık *</label>
-        <div class="input-with-mic">
-          <input type="text" id="f_title" value="${isEdit ? escapeHtml(task.title) : ''}">
-          <button type="button" class="mic-btn" id="voiceBtnTitle" title="Sesle yaz">🎤</button>
-        </div>
-      </div>
-      <div class="field">
-        <label>Açıklama</label>
-        <div class="input-with-mic">
-          <textarea id="f_desc" class="desc-lg">${isEdit ? escapeHtml(task.description||'') : ''}</textarea>
-          <button type="button" class="mic-btn" id="voiceBtnDesc" title="Sesle yaz">🎤</button>
-        </div>
-      </div>
-      <div class="field">
-        <label>Kategori</label>
-        <select id="f_cat" ${parentTask ? 'disabled' : ''}>
-          ${state.categories.map(c=>`<option value="${c.id}" ${c.id===categoryId?'selected':''}>${c.name}</option>`).join('')}
-        </select>
-      </div>
-      <div class="field">
-        <label>Durum Etiketi</label>
-        <select id="f_statustag">
-          <option value="not_started" ${(!isEdit || (task.statusTag||'not_started')==='not_started') ? 'selected':''}>Başlamadı</option>
-          <option value="in_progress" ${isEdit && task.statusTag==='in_progress' ? 'selected':''}>Yapılmakta</option>
-          <option value="done" ${isEdit && task.statusTag==='done' ? 'selected':''}>Tamamlandı</option>
-          <option value="failed" ${isEdit && task.statusTag==='failed' ? 'selected':''}>Tamamlanamadı</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Öncelik</label>
-        <select id="f_prio">
-          <option value="4" ${isEdit && task.priority===4 ? 'selected':''}>Acil</option>
-          <option value="3" ${isEdit && task.priority===3 ? 'selected':''}>Yüksek</option>
-          <option value="2" ${(!isEdit || task.priority===2) ? 'selected':''}>Orta</option>
-          <option value="1" ${isEdit && task.priority===1 ? 'selected':''}>Düşük</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Tekrarlama</label>
-        <select id="f_recur">
-          <option value="none" ${(!isEdit || !task.recurrence || task.recurrence==='none') ? 'selected':''}>Tekrarlanmıyor</option>
-          <option value="daily" ${isEdit && task.recurrence==='daily' ? 'selected':''}>Her gün</option>
-          <option value="weekly" ${isEdit && task.recurrence==='weekly' ? 'selected':''}>Her hafta</option>
-          <option value="monthly" ${isEdit && task.recurrence==='monthly' ? 'selected':''}>Her ay</option>
-        </select>
-        <div class="hint">Termin tarihi olan bir görev "Tamamlandı" olarak işaretlendiğinde, seçili sıklığa göre bir sonraki tekrarı otomatik oluşturulur.</div>
-      </div>
-      <div class="row3">
+      <div class="modal-section">
+        <div class="modal-section-title">Başlık ve Açıklama</div>
         <div class="field">
-          <label>Başlangıç Tarihi</label>
-          <input type="date" id="f_start" ${minAttr} ${maxAttr} value="${isEdit ? (task.startDate||'') : ''}">
+          <label>Başlık *</label>
+          <div class="input-with-mic">
+            <input type="text" id="f_title" value="${isEdit ? escapeHtml(task.title) : ''}">
+            <button type="button" class="mic-btn" id="voiceBtnTitle" title="Sesle yaz">🎤</button>
+          </div>
         </div>
         <div class="field">
-          <label>Termin Tarihi</label>
-          <input type="date" id="f_due" ${minAttr} ${maxAttr} value="${isEdit ? (task.dueDate||'') : ''}">
+          <label>Açıklama</label>
+          <div class="input-with-mic">
+            <textarea id="f_desc" class="desc-lg">${isEdit ? escapeHtml(task.description||'') : ''}</textarea>
+            <button type="button" class="mic-btn" id="voiceBtnDesc" title="Sesle yaz">🎤</button>
+          </div>
         </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">Kategori, Durum ve Öncelik</div>
         <div class="field">
-          <label>Tamamlanma Tarihi</label>
-          <input type="date" id="f_comp" value="${isEdit ? (task.completionDate||'') : ''}">
+          <label>Kategori</label>
+          <select id="f_cat" ${parentTask ? 'disabled' : ''}>
+            ${state.categories.map(c=>`<option value="${c.id}" ${c.id===categoryId?'selected':''}>${c.name}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field" id="statusTagField"></div>
+        <div class="field">
+          <label>Öncelik</label>
+          <select id="f_prio">
+            <option value="4" ${isEdit && task.priority===4 ? 'selected':''}>Acil</option>
+            <option value="3" ${isEdit && task.priority===3 ? 'selected':''}>Yüksek</option>
+            <option value="2" ${(!isEdit || task.priority===2) ? 'selected':''}>Orta</option>
+            <option value="1" ${isEdit && task.priority===1 ? 'selected':''}>Düşük</option>
+          </select>
         </div>
       </div>
-      <div class="field">
-        <label>Mini Görevler (Kontrol Listesi)</label>
-        <div id="checklistContainer"></div>
-        <div class="checklist-add-row">
-          <input type="text" id="checklistNewItem" placeholder="Yeni madde ekle...">
-          <button type="button" class="btn-outline" id="btnAddChecklistItem">+ Ekle</button>
+      <div class="modal-section">
+        <div class="modal-section-title">Tekrarlama</div>
+        <div class="field">
+          <select id="f_recur">
+            <option value="none" ${(!isEdit || !task.recurrence || task.recurrence==='none') ? 'selected':''}>Tekrarlanmıyor</option>
+            <option value="daily" ${isEdit && task.recurrence==='daily' ? 'selected':''}>Her gün</option>
+            <option value="weekly" ${isEdit && task.recurrence==='weekly' ? 'selected':''}>Her hafta</option>
+            <option value="monthly" ${isEdit && task.recurrence==='monthly' ? 'selected':''}>Her ay</option>
+          </select>
+          <div class="hint">Termin tarihi olan bir görev "Tamamlandı" olarak işaretlendiğinde, seçili sıklığa göre bir sonraki tekrarı otomatik oluşturulur.</div>
         </div>
-        <div class="hint">Tüm maddeler işaretlenince (alt görevi yoksa) bu görev otomatik %100 tamamlanmış sayılır.</div>
       </div>
-      <div class="field">
-        <label>Zaman Takibi (Harcanan Süre)</label>
-        <div id="timeLogContainer"></div>
-        <div class="checklist-add-row">
-          <input type="number" id="timeLogMinutes" placeholder="Dakika" min="1" step="1" style="max-width:110px;">
-          <input type="text" id="timeLogNote" placeholder="Not (opsiyonel)">
-          <button type="button" class="btn-outline" id="btnAddTimeLog">+ Ekle</button>
+      <div class="modal-section">
+        <div class="modal-section-title">Tarihler</div>
+        <div class="row3">
+          <div class="field">
+            <label>Başlangıç Tarihi</label>
+            <input type="date" id="f_start" ${minAttr} ${maxAttr} value="${isEdit ? (task.startDate||'') : ''}">
+          </div>
+          <div class="field">
+            <label>Termin Tarihi</label>
+            <input type="date" id="f_due" ${minAttr} ${maxAttr} value="${isEdit ? (task.dueDate||'') : ''}">
+          </div>
+          <div class="field">
+            <label>Tamamlanma Tarihi</label>
+            <input type="date" id="f_comp" value="${isEdit ? (task.completionDate||'') : ''}">
+          </div>
         </div>
-        <div class="hint" id="timeLogTotal"></div>
       </div>
-      <div class="field">
-        <label>Ekli Dosyalar</label>
-        <div id="attachContainer"></div>
-        <input type="file" id="attachFileInput" style="display:none">
-        <div class="attach-add-row">
-          <button type="button" class="btn-outline" id="btnAddAttachment">📎 Dosya Ekle</button>
+      <div class="modal-section">
+        <div class="modal-section-title">Mini Görevler</div>
+        ${isLeafNow ? `
+        <div class="field">
+          <label>Mini Görevler (Kontrol Listesi)</label>
+          <div id="checklistContainer"></div>
+          <div class="checklist-add-row">
+            <input type="text" id="checklistNewItem" placeholder="Yeni mini görev ekle">
+            <button type="button" class="btn-outline" id="btnAddChecklistItem">+ Ekle</button>
+          </div>
+          <div class="hint">Tüm maddeler işaretlenince (alt görevi yoksa) bu görev otomatik %100 tamamlanmış sayılır. Bir görevde ya mini görev ya da alt görev olabilir.</div>
         </div>
-        <div class="hint">Dosya başına yaklaşık 700KB sınırı vardır (bulut senkronizasyonu için).</div>
+        ` : `
+        <div class="field">
+          <label>Mini Görevler (Kontrol Listesi)</label>
+          <div class="passive-box">Alt görevler takip edilmektedir</div>
+        </div>
+        `}
       </div>
-      <div class="field" id="progressField"></div>
-      <div class="modal-actions">
-        <div class="left">
-          ${isEdit ? `<button class="btn-danger" id="btnDeleteInModal">Sil</button>` : ''}
+      <div class="modal-section">
+        <div class="modal-section-title">Süre</div>
+        <div class="field">
+          <label class="checkbox-label"><input type="checkbox" id="f_timeTrackToggle" ${modalTimeTrackingEnabled ? 'checked':''}> Bu görev için süre takibi yapmak istiyor musunuz?</label>
+          <div id="timeTrackBody" style="display:${modalTimeTrackingEnabled ? 'block':'none'};margin-top:10px;">
+            <div id="timeLogContainer"></div>
+            <div class="checklist-add-row">
+              <input type="number" id="timeLogMinutes" placeholder="Dakika" min="1" step="1" style="max-width:110px;">
+              <input type="text" id="timeLogNote" placeholder="Not (opsiyonel)">
+              <button type="button" class="btn-outline" id="btnAddTimeLog">+ Ekle</button>
+            </div>
+            <div class="hint" id="timeLogTotal"></div>
+          </div>
         </div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn-outline" id="btnCancelModal">Vazgeç</button>
-          <button class="btn-solid" id="btnSaveModal">Kaydet</button>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">Ekli Dosyalar</div>
+        <div class="field">
+          <div id="attachContainer"></div>
+          <input type="file" id="attachFileInput" style="display:none">
+          <div class="attach-add-row">
+            <button type="button" class="btn-outline" id="btnAddAttachment">📎 Dosya Ekle</button>
+          </div>
+          <div class="hint">Dosya başına yaklaşık 700KB sınırı vardır (bulut senkronizasyonu için).</div>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">Görevin Tamamlanma Oranı</div>
+        <div class="field" id="progressField"></div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-actions">
+          <div class="left">
+            ${isEdit ? `<button class="btn-danger" id="btnDeleteInModal">Sil</button>` : ''}
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-outline" id="btnCancelModal">Vazgeç</button>
+            <button class="btn-solid" id="btnSaveModal">Kaydet</button>
+          </div>
         </div>
       </div>
     </div>
@@ -1668,6 +1733,32 @@ function openModal(opts){
 
   attachVoiceButton('voiceBtnTitle', 'f_title');
   attachVoiceButton('voiceBtnDesc', 'f_desc');
+
+  // ---- Durum Etiketi render/etkileşim (madde 2, 3, 6) ----
+  // Bir görevde mini görev ya da alt görev varsa, tamamlanma oranı bunlardan otomatik türediği
+  // için Durum Etiketi'nin elle "Tamamlandı" gibi bir değere çekilmesi anlamsız olur; bu yüzden
+  // alan pasif bir bilgi kutusuna dönüşür. isLeafNow (alt görev var mı) modal açılışında sabit,
+  // modalChecklist.length ise modal içinde mini görev eklendikçe/silindikçe değişebilir — bu
+  // yüzden checklist değiştiğinde bu fonksiyon yeniden çağrılır.
+  function renderStatusTagField(){
+    const field = document.getElementById('statusTagField');
+    if(!field) return;
+    if(!isLeafNow){
+      field.innerHTML = `<label>Durum Etiketi</label><div class="passive-box" title="Bu görevin durumu alt görevlerinden otomatik belirlenir">Alt görevler takip edilmektedir</div>`;
+    } else if(modalChecklist.length > 0){
+      field.innerHTML = `<label>Durum Etiketi</label><div class="passive-box" title="Bu görevin durumu mini görevlerinden otomatik belirlenir">Mini görevler takip edilmektedir</div>`;
+    } else {
+      field.innerHTML = `<label>Durum Etiketi</label>
+        <select id="f_statustag">
+          <option value="not_started" ${modalStatusTag==='not_started' ? 'selected':''}>Başlamadı</option>
+          <option value="in_progress" ${modalStatusTag==='in_progress' ? 'selected':''}>Yapılmakta</option>
+          <option value="done" ${modalStatusTag==='done' ? 'selected':''}>Tamamlandı</option>
+          <option value="failed" ${modalStatusTag==='failed' ? 'selected':''}>Tamamlanamadı</option>
+        </select>`;
+      document.getElementById('f_statustag').addEventListener('change', (e)=>{ modalStatusTag = e.target.value; });
+    }
+  }
+  renderStatusTagField();
 
   // ---- Kontrol listesi render/etkileşim ----
   function renderChecklistSection(){
@@ -1694,6 +1785,7 @@ function openModal(opts){
         modalChecklist = modalChecklist.filter(i=>i.id!==el.getAttribute('data-cl-del'));
         renderChecklistSection();
         renderProgressField();
+        renderStatusTagField();
       });
     });
   }
@@ -1706,12 +1798,18 @@ function openModal(opts){
     input.value = '';
     renderChecklistSection();
     renderProgressField();
+    renderStatusTagField();
     input.focus();
   }
-  document.getElementById('btnAddChecklistItem').addEventListener('click', addChecklistItem);
-  document.getElementById('checklistNewItem').addEventListener('keydown', (e)=>{
-    if(e.key === 'Enter'){ e.preventDefault(); addChecklistItem(); }
-  });
+  // Madde 1: bir görevde ya mini görev ya da alt görev olabilir. Alt görevi olan (isLeafNow===false)
+  // bir görevde mini görev ekleme arayüzü hiç render edilmiyor (yukarıdaki şablonda pasif kutu
+  // gösteriliyor), bu yüzden bu butonlar sadece isLeafNow true iken DOM'da mevcut.
+  if(isLeafNow){
+    document.getElementById('btnAddChecklistItem').addEventListener('click', addChecklistItem);
+    document.getElementById('checklistNewItem').addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter'){ e.preventDefault(); addChecklistItem(); }
+    });
+  }
 
   // ---- Zaman takibi render/etkileşim (madde 5.9) ----
   function renderTimeLogSection(){
@@ -1755,6 +1853,13 @@ function openModal(opts){
     if(e.key === 'Enter'){ e.preventDefault(); addTimeLogEntry(); }
   });
   renderTimeLogSection();
+
+  // Madde 9: süre takibi artık her görevde varsayılan aktif değil — kullanıcı onay kutusunu
+  // işaretlerse süre kaydı alanı görünür olur.
+  document.getElementById('f_timeTrackToggle').addEventListener('change', (e)=>{
+    modalTimeTrackingEnabled = e.target.checked;
+    document.getElementById('timeTrackBody').style.display = modalTimeTrackingEnabled ? 'block' : 'none';
+  });
 
   // ---- Ekli dosyalar render/etkileşim ----
   function renderAttachSection(){
@@ -1830,18 +1935,20 @@ function openModal(opts){
   });
 
   // ---- Tamamlanma oranı alanı: alt görev varsa / kontrol listesi varsa otomatik, yoksa elle ----
+  // Madde 8: bu alandaki gösterge (yüzde metni ve el ile ayarlanan kaydırıcı) 3 kat büyütüldü —
+  // bkz. .progress-big-value / .progress-big-slider CSS sınıfları.
   function renderProgressField(){
     const field = document.getElementById('progressField');
     if(!isLeafNow){
       const pct = isEdit ? calcProgress(task.id) : 0;
-      field.innerHTML = `<label>Tamamlanma Oranı (%)</label><div class="disabled-note" title="Alt görevlerin ortalamasından otomatik hesaplanır">otomatik (alt görevlerden) — %${Math.round(pct)}</div>`;
+      field.innerHTML = `<div class="progress-big-value" title="Alt görevlerin ortalamasından otomatik hesaplanır">otomatik (alt görevlerden) — %${Math.round(pct)}</div>`;
     } else if(modalChecklist.length > 0){
       const pct = checklistProgress(modalChecklist);
       const doneCount = modalChecklist.filter(i=>i.done).length;
-      field.innerHTML = `<label>Tamamlanma Oranı (%)</label><div class="disabled-note" title="Kontrol listesindeki işaretli madde oranından otomatik hesaplanır">otomatik (kontrol listesi: ${doneCount}/${modalChecklist.length}) — %${Math.round(pct)}</div>`;
+      field.innerHTML = `<div class="progress-big-value" title="Kontrol listesindeki işaretli madde oranından otomatik hesaplanır">otomatik (kontrol listesi: ${doneCount}/${modalChecklist.length}) — %${Math.round(pct)}</div>`;
     } else {
       const val = isEdit ? (task.manualProgress||0) : 0;
-      field.innerHTML = `<label>Tamamlanma Oranı (%)</label><input type="range" min="0" max="100" step="5" id="f_prog" value="${val}"><div class="hint" id="f_prog_val">${val}%</div>`;
+      field.innerHTML = `<input type="range" min="0" max="100" step="5" id="f_prog" class="progress-big-slider" value="${val}"><div class="progress-big-value" id="f_prog_val">${val}%</div>`;
       const slider = document.getElementById('f_prog');
       slider.addEventListener('input', ()=>{
         document.getElementById('f_prog_val').textContent = slider.value + '%';
@@ -1874,7 +1981,10 @@ function openModal(opts){
     if(!title){ alert('Başlık zorunludur.'); return false; }
     const desc = document.getElementById('f_desc').value.trim();
     const cat = document.getElementById('f_cat').value;
-    const statusTag = document.getElementById('f_statustag').value;
+    // Madde 2, 3, 6: statusTag artık her zaman bir <select>'ten okunamaz — mini görevi ya da alt
+    // görevi olan bir görevde bu alan pasiftir ve DOM'da <select> yoktur. modalStatusTag her
+    // durumda güncel değeri tutar (pasifken son bilinen/kayıtlı değeri korur).
+    const statusTag = modalStatusTag;
     const start = document.getElementById('f_start').value;
     const due = document.getElementById('f_due').value;
     const comp = document.getElementById('f_comp').value;
@@ -1925,6 +2035,7 @@ function openModal(opts){
       task.checklist = modalChecklist;
       task.attachments = modalAttachments;
       task.timeLog = modalTimeLog;
+      task.timeTrackingEnabled = modalTimeTrackingEnabled;
       if(isLeafNow && modalChecklist.length === 0) task.manualProgress = prog;
       // Tekrarlanan görev (madde 5.1): "Tamamlandı" durumuna YENİ geçildiyse (daha önce zaten
       // tamamlanmış bir göreve tekrar kaydet basmak yeni bir tekrar oluşturmaz) bir sonraki tekrarı oluştur.
@@ -1945,6 +2056,7 @@ function openModal(opts){
         checklist: modalChecklist,
         attachments: modalAttachments,
         timeLog: modalTimeLog,
+        timeTrackingEnabled: modalTimeTrackingEnabled,
         createdAt: Date.now()
       });
     }
@@ -1962,7 +2074,7 @@ function openModal(opts){
       title: document.getElementById('f_title').value,
       desc: document.getElementById('f_desc').value,
       cat: document.getElementById('f_cat').value,
-      statusTag: document.getElementById('f_statustag').value,
+      statusTag: modalStatusTag,
       prio: document.getElementById('f_prio').value,
       start: document.getElementById('f_start').value,
       due: document.getElementById('f_due').value,
@@ -1970,6 +2082,7 @@ function openModal(opts){
       checklist: modalChecklist,
       attachments: modalAttachments.map(a=>a.id),
       timeLog: modalTimeLog,
+      timeTrack: modalTimeTrackingEnabled,
       prog: document.getElementById('f_prog') ? document.getElementById('f_prog').value : null
     });
   }
@@ -2612,12 +2725,12 @@ updateNotifBadge();
 // yapıştırın. Alanlar "BURAYA_YAPISTIR" olarak kaldığı sürece bulut senkronizasyonu devre dışı
 // kalır ve uygulama sorunsuz şekilde yalnızca bu tarayıcıda (localStorage) çalışmaya devam eder.
 const firebaseConfig = {
-  apiKey: "AIzaSyBdGlbjtyVMf7udBEUNie6LzLtoSBhunwE",
-  authDomain: "gorev-takip-yeni.firebaseapp.com",
-  projectId: "gorev-takip-yeni",
-  storageBucket: "gorev-takip-yeni.firebasestorage.app",
-  messagingSenderId: "872649656634",
-  appId: "1:872649656634:web:f4527dfa6c5f5d4d442803"
+  apiKey: "AIzaSyCpDNTROpgFTU2_t5k6NqfHw4lcA2KiH3E",
+  authDomain: "gorevtakiperginyilmaz.firebaseapp.com",
+  projectId: "gorevtakiperginyilmaz",
+  storageBucket: "gorevtakiperginyilmaz.firebasestorage.app",
+  messagingSenderId: "707048079069",
+  appId: "1:707048079069:web:0e7de34f6e3fee4a41e534"
 };
 const CLOUD_ENABLED = !!(firebaseConfig.apiKey && firebaseConfig.apiKey !== "BURAYA_YAPISTIR");
 
@@ -3452,7 +3565,7 @@ function renderSharedTaskNode(list, task, depth, role){
         </div>
       </div>
       <div class="task-actions">
-        <button class="icon-btn" title="Alt görev ekle" aria-label="Alt görev ekle" data-sh-addsub="${task.id}">➕</button>
+        <button class="icon-btn" title="${hasChecklist ? 'Mini görevleri olan bir göreve alt görev eklenemez' : 'Alt görev ekle'}" aria-label="${hasChecklist ? 'Mini görevleri olan bir göreve alt görev eklenemez' : 'Alt görev ekle'}" data-sh-addsub="${task.id}" ${hasChecklist ? 'disabled' : ''}>➕</button>
       </div>
     </div>
     ${children.length ? `<div class="children" style="display:${collapsed?'none':'block'}">${children.map(c=>renderSharedTaskNode(list,c,depth+1,role)).join('')}</div>` : ''}
@@ -3508,6 +3621,12 @@ function attachSharedTaskNodeEvents(root, list){
       e.stopPropagation();
       const parentId = el.getAttribute('data-sh-addsub');
       const parentTask = list.find(t=>t.id===parentId);
+      // Madde 1 (kişisel görevlerdeki mantığın atanan görevlere de uygulanması): mini görevi olan
+      // bir göreve alt görev eklenemez.
+      if(parentTask.checklist && parentTask.checklist.length > 0){
+        alert('Bu görevde mini görevler (kontrol listesi) var. Bir görevde ya mini görev ya da alt görev olabilir; alt görev eklemeden önce mini görevleri kaldırmalısınız.');
+        return;
+      }
       openSharedTaskModal({mode:'create', parentId, parentTask});
     });
   });
@@ -3542,6 +3661,12 @@ function openSharedTaskModal(opts){
   // Madde 5.4: yorumlar checklist/attachments'ın aksine "Kaydet" beklemeden anında buluta
   // yazılır (bir sohbet gibi) — kullanıcı yorum yazıp "Vazgeç" derse yorumun kaybolmaması için.
   let modalComments = (isEdit && existing.comments) ? existing.comments.map(c=>({...c})) : [];
+  // Görev/alt görev/mini görev mantığı yeniden kurulumu (madde #100), kişisel görev modalindeki
+  // ile birebir aynı mantık atanan görevler için de uygulanıyor: süre takibi varsayılan kapalı,
+  // statusTag mini görev/alt görev varsa pasif (modalSharedStatusTag ile takip edilir).
+  let modalTimeLog = (isEdit && existing.timeLog) ? existing.timeLog.map(l=>({...l})) : [];
+  let modalTimeTrackingEnabled = isEdit ? !!(existing.timeTrackingEnabled || (existing.timeLog && existing.timeLog.length>0)) : false;
+  let modalSharedStatusTag = (isEdit && existing.statusTag) ? existing.statusTag : 'not_started';
 
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
@@ -3552,94 +3677,155 @@ function openSharedTaskModal(opts){
       ${isEdit ? `<div class="hint" style="margin-bottom:10px;">Atayan: <b>${escapeHtml(existing.ownerName || existing.ownerEmail)}</b> — Atanan: <b>${escapeHtml(existing.assigneeName || existing.assigneeEmail)}</b></div>` : ''}
       ${parentTask ? `<div class="hint" style="margin-bottom:10px;">Üst görev: <b>${escapeHtml(parentTask.title)}</b></div>` : ''}
       ${(!isEdit && !parentTask) ? `
-      <div class="field">
-        <label>Kime Atanacak *</label>
-        <select id="sh_assignee">
-          ${mutualPeople.map(c=>`<option value="${c.toUid}" data-email="${escapeHtml(c.toEmail)}" data-name="${escapeHtml(c.name)}">${escapeHtml(c.name)} (${escapeHtml(c.toEmail)})</option>`).join('')}
-        </select>
+      <div class="modal-section">
+        <div class="modal-section-title">Kime Atanacak</div>
+        <div class="field">
+          <select id="sh_assignee">
+            ${mutualPeople.map(c=>`<option value="${c.toUid}" data-email="${escapeHtml(c.toEmail)}" data-name="${escapeHtml(c.name)}">${escapeHtml(c.name)} (${escapeHtml(c.toEmail)})</option>`).join('')}
+          </select>
+        </div>
       </div>` : ''}
-      <div class="field">
-        <label>Başlık *</label>
-        <input type="text" id="sh_title" value="${isEdit ? escapeHtml(existing.title) : ''}">
-      </div>
-      <div class="field">
-        <label>Açıklama</label>
-        <textarea id="sh_desc" class="desc-lg">${isEdit ? escapeHtml(existing.description||'') : ''}</textarea>
-      </div>
-      <div class="field">
-        <label>Durum Etiketi</label>
-        <select id="sh_statustag">
-          <option value="not_started" ${(!isEdit || (existing.statusTag||'not_started')==='not_started') ? 'selected':''}>Başlamadı</option>
-          <option value="in_progress" ${isEdit && existing.statusTag==='in_progress' ? 'selected':''}>Yapılmakta</option>
-          <option value="done" ${isEdit && existing.statusTag==='done' ? 'selected':''}>Tamamlandı</option>
-          <option value="failed" ${isEdit && existing.statusTag==='failed' ? 'selected':''}>Tamamlanamadı</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Öncelik</label>
-        <select id="sh_prio">
-          <option value="4" ${isEdit && existing.priority===4 ? 'selected':''}>Acil</option>
-          <option value="3" ${isEdit && existing.priority===3 ? 'selected':''}>Yüksek</option>
-          <option value="2" ${(!isEdit || existing.priority===2) ? 'selected':''}>Orta</option>
-          <option value="1" ${isEdit && existing.priority===1 ? 'selected':''}>Düşük</option>
-        </select>
-      </div>
-      <div class="row3">
-        <div class="field"><label>Başlangıç Tarihi</label><input type="date" id="sh_start" value="${isEdit ? (existing.startDate||'') : ''}"></div>
-        <div class="field"><label>Termin Tarihi</label><input type="date" id="sh_due" value="${isEdit ? (existing.dueDate||'') : ''}"></div>
-        <div class="field"><label>Tamamlanma Tarihi</label><input type="date" id="sh_comp" value="${isEdit ? (existing.completionDate||'') : ''}"></div>
-      </div>
-      <div class="field">
-        <label>Mini Görevler (Kontrol Listesi)</label>
-        <div id="sh_checklistContainer"></div>
-        <div class="checklist-add-row">
-          <input type="text" id="sh_checklistNewItem" placeholder="Yeni madde ekle...">
-          <button type="button" class="btn-outline" id="sh_btnAddChecklistItem">+ Ekle</button>
+      <div class="modal-section">
+        <div class="modal-section-title">Başlık ve Açıklama</div>
+        <div class="field">
+          <label>Başlık *</label>
+          <input type="text" id="sh_title" value="${isEdit ? escapeHtml(existing.title) : ''}">
+        </div>
+        <div class="field">
+          <label>Açıklama</label>
+          <textarea id="sh_desc" class="desc-lg">${isEdit ? escapeHtml(existing.description||'') : ''}</textarea>
         </div>
       </div>
-      <div class="field">
-        <label>Yorumlar / Notlar</label>
-        ${isEdit ? `
-        <div id="sh_commentsContainer"></div>
-        <div class="checklist-add-row">
-          <input type="text" id="sh_commentNewText" placeholder="Yorum yaz...">
-          <button type="button" class="btn-outline" id="sh_btnAddComment">Gönder</button>
+      <div class="modal-section">
+        <div class="modal-section-title">Durum ve Öncelik</div>
+        <div class="field" id="sh_statusTagField"></div>
+        <div class="field">
+          <label>Öncelik</label>
+          <select id="sh_prio">
+            <option value="4" ${isEdit && existing.priority===4 ? 'selected':''}>Acil</option>
+            <option value="3" ${isEdit && existing.priority===3 ? 'selected':''}>Yüksek</option>
+            <option value="2" ${(!isEdit || existing.priority===2) ? 'selected':''}>Orta</option>
+            <option value="1" ${isEdit && existing.priority===1 ? 'selected':''}>Düşük</option>
+          </select>
         </div>
-        ` : `<div class="hint">Yorum eklemek için önce görevi oluştur (Ata), sonra tekrar açıp yorum ekleyebilirsin.</div>`}
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">Tarihler</div>
+        <div class="row3">
+          <div class="field"><label>Başlangıç Tarihi</label><input type="date" id="sh_start" value="${isEdit ? (existing.startDate||'') : ''}"></div>
+          <div class="field"><label>Termin Tarihi</label><input type="date" id="sh_due" value="${isEdit ? (existing.dueDate||'') : ''}"></div>
+          <div class="field"><label>Tamamlanma Tarihi</label><input type="date" id="sh_comp" value="${isEdit ? (existing.completionDate||'') : ''}"></div>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">Mini Görevler</div>
+        ${isLeafNow ? `
+        <div class="field">
+          <label>Mini Görevler (Kontrol Listesi)</label>
+          <div id="sh_checklistContainer"></div>
+          <div class="checklist-add-row">
+            <input type="text" id="sh_checklistNewItem" placeholder="Yeni mini görev ekle">
+            <button type="button" class="btn-outline" id="sh_btnAddChecklistItem">+ Ekle</button>
+          </div>
+          <div class="hint">Bir görevde ya mini görev ya da alt görev olabilir.</div>
+        </div>
+        ` : `
+        <div class="field">
+          <label>Mini Görevler (Kontrol Listesi)</label>
+          <div class="passive-box">Alt görevler takip edilmektedir</div>
+        </div>
+        `}
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">Süre</div>
+        <div class="field">
+          <label class="checkbox-label"><input type="checkbox" id="sh_timeTrackToggle" ${modalTimeTrackingEnabled ? 'checked':''}> Bu görev için süre takibi yapmak istiyor musunuz?</label>
+          <div id="sh_timeTrackBody" style="display:${modalTimeTrackingEnabled ? 'block':'none'};margin-top:10px;">
+            <div id="sh_timeLogContainer"></div>
+            <div class="checklist-add-row">
+              <input type="number" id="sh_timeLogMinutes" placeholder="Dakika" min="1" step="1" style="max-width:110px;">
+              <input type="text" id="sh_timeLogNote" placeholder="Not (opsiyonel)">
+              <button type="button" class="btn-outline" id="sh_btnAddTimeLog">+ Ekle</button>
+            </div>
+            <div class="hint" id="sh_timeLogTotal"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">Yorumlar / Notlar</div>
+        <div class="field">
+          ${isEdit ? `
+          <div id="sh_commentsContainer"></div>
+          <div class="checklist-add-row">
+            <input type="text" id="sh_commentNewText" placeholder="Yorum yaz...">
+            <button type="button" class="btn-outline" id="sh_btnAddComment">Gönder</button>
+          </div>
+          ` : `<div class="hint">Yorum eklemek için önce görevi oluştur (Ata), sonra tekrar açıp yorum ekleyebilirsin.</div>`}
+        </div>
       </div>
       ${(isEdit && existing.history && existing.history.length) ? `
-      <div class="field">
-        <label>Değişiklik Geçmişi</label>
-        <div id="sh_historyContainer">${existing.history.slice().sort((a,b)=>b.createdAt-a.createdAt).map(h=>`
-          <div class="history-item">
-            <div class="history-msg">${escapeHtml(h.message)}</div>
-            <div class="history-meta">${timeAgoTr(h.createdAt)}</div>
-          </div>`).join('')}</div>
+      <div class="modal-section">
+        <div class="modal-section-title">Değişiklik Geçmişi</div>
+        <div class="field">
+          <div id="sh_historyContainer">${existing.history.slice().sort((a,b)=>b.createdAt-a.createdAt).map(h=>`
+            <div class="history-item">
+              <div class="history-msg">${escapeHtml(h.message)}</div>
+              <div class="history-meta">${timeAgoTr(h.createdAt)}</div>
+            </div>`).join('')}</div>
+        </div>
       </div>` : ''}
-      <div class="field">
-        <label>Ekli Dosyalar</label>
-        ${canManageAttachments ? `
-        <div id="sh_attachContainer"></div>
-        <input type="file" id="sh_attachFileInput" style="display:none">
-        <div class="attach-add-row">
-          <button type="button" class="btn-outline" id="sh_btnAddAttachment">📎 Dosya Ekle</button>
+      <div class="modal-section">
+        <div class="modal-section-title">Ekli Dosyalar</div>
+        <div class="field">
+          ${canManageAttachments ? `
+          <div id="sh_attachContainer"></div>
+          <input type="file" id="sh_attachFileInput" style="display:none">
+          <div class="attach-add-row">
+            <button type="button" class="btn-outline" id="sh_btnAddAttachment">📎 Dosya Ekle</button>
+          </div>
+          <div class="hint">Dosya başına yaklaşık 700KB sınırı vardır. Yüklenen dosyalar hem atayan hem atanan tarafından görülebilir.</div>
+          ` : `<div class="hint">Dosya eklemek için önce görevi oluştur (Ata), sonra tekrar açıp dosya ekleyebilirsin.</div>`}
         </div>
-        <div class="hint">Dosya başına yaklaşık 700KB sınırı vardır. Yüklenen dosyalar hem atayan hem atanan tarafından görülebilir.</div>
-        ` : `<div class="hint">Dosya eklemek için önce görevi oluştur (Ata), sonra tekrar açıp dosya ekleyebilirsin.</div>`}
       </div>
-      <div class="field" id="sh_progressField"></div>
-      <div class="modal-actions">
-        <div class="left">
-          ${(isEdit && isOwner) ? `<button class="btn-danger" id="btnDeleteShared">Sil</button>` : ''}
-        </div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn-outline" id="btnCancelShared">Vazgeç</button>
-          <button class="btn-solid" id="btnSaveShared">${isEdit ? 'Kaydet' : (parentTask ? 'Alt Görevi Ekle' : 'Ata')}</button>
+      <div class="modal-section">
+        <div class="modal-section-title">Görevin Tamamlanma Oranı</div>
+        <div class="field" id="sh_progressField"></div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-actions">
+          <div class="left">
+            ${(isEdit && isOwner) ? `<button class="btn-danger" id="btnDeleteShared">Sil</button>` : ''}
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-outline" id="btnCancelShared">Vazgeç</button>
+            <button class="btn-solid" id="btnSaveShared">${isEdit ? 'Kaydet' : (parentTask ? 'Alt Görevi Ekle' : 'Ata')}</button>
+          </div>
         </div>
       </div>
     </div>
   `;
   document.body.appendChild(overlay);
+
+  // ---- Durum Etiketi render/etkileşim (madde #100 — kişisel görev modaliyle aynı mantık) ----
+  function renderSharedStatusTagField(){
+    const field = document.getElementById('sh_statusTagField');
+    if(!field) return;
+    if(!isLeafNow){
+      field.innerHTML = `<label>Durum Etiketi</label><div class="passive-box" title="Bu görevin durumu alt görevlerinden otomatik belirlenir">Alt görevler takip edilmektedir</div>`;
+    } else if(modalChecklist.length > 0){
+      field.innerHTML = `<label>Durum Etiketi</label><div class="passive-box" title="Bu görevin durumu mini görevlerinden otomatik belirlenir">Mini görevler takip edilmektedir</div>`;
+    } else {
+      field.innerHTML = `<label>Durum Etiketi</label>
+        <select id="sh_statustag">
+          <option value="not_started" ${modalSharedStatusTag==='not_started' ? 'selected':''}>Başlamadı</option>
+          <option value="in_progress" ${modalSharedStatusTag==='in_progress' ? 'selected':''}>Yapılmakta</option>
+          <option value="done" ${modalSharedStatusTag==='done' ? 'selected':''}>Tamamlandı</option>
+          <option value="failed" ${modalSharedStatusTag==='failed' ? 'selected':''}>Tamamlanamadı</option>
+        </select>`;
+      document.getElementById('sh_statustag').addEventListener('change', (e)=>{ modalSharedStatusTag = e.target.value; });
+    }
+  }
+  renderSharedStatusTagField();
 
   function renderChecklistSection(){
     const box = document.getElementById('sh_checklistContainer');
@@ -3665,6 +3851,7 @@ function openSharedTaskModal(opts){
         modalChecklist = modalChecklist.filter(i=>i.id!==el.getAttribute('data-cl-del'));
         renderChecklistSection();
         renderProgressField();
+        renderSharedStatusTagField();
       });
     });
   }
@@ -3676,11 +3863,64 @@ function openSharedTaskModal(opts){
     input.value = '';
     renderChecklistSection();
     renderProgressField();
+    renderSharedStatusTagField();
     input.focus();
   }
+  // Madde 1: mini görevi olan bir görevde alt görev eklenemeyeceği gibi, alt görevi olan bir
+  // görevde de (isLeafNow===false) mini görev ekleme arayüzü hiç render edilmiyor (yukarıda pasif
+  // kutu gösteriliyor) — bu yüzden bu dinleyiciler sadece isLeafNow true iken DOM'da mevcut.
+  if(isLeafNow){
   document.getElementById('sh_btnAddChecklistItem').addEventListener('click', addChecklistItem);
   document.getElementById('sh_checklistNewItem').addEventListener('keydown', (e)=>{
     if(e.key === 'Enter'){ e.preventDefault(); addChecklistItem(); }
+  });
+  }
+
+  // ---- Zaman takibi render/etkileşim (madde #100 — kişisel görev modaliyle aynı desen) ----
+  function renderSharedTimeLogSection(){
+    const box = document.getElementById('sh_timeLogContainer');
+    if(!box) return;
+    box.innerHTML = modalTimeLog.length
+      ? modalTimeLog.slice().sort((a,b)=>b.loggedAt-a.loggedAt).map(entry => `
+        <div class="checklist-item">
+          <span>⏱ ${formatMinutes(entry.minutes)}${entry.note ? ` — ${escapeHtml(entry.note)}` : ''} <span style="color:var(--sub);font-size:11px;">(${fmtDate(entry.date)})</span></span>
+          <button type="button" class="icon-btn" data-tl-del="${entry.id}" title="Sil" aria-label="Zaman kaydını sil">🗑️</button>
+        </div>`).join('')
+      : `<div class="hint">Henüz zaman kaydı eklenmedi.</div>`;
+    box.querySelectorAll('[data-tl-del]').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        modalTimeLog = modalTimeLog.filter(l=>l.id!==el.getAttribute('data-tl-del'));
+        renderSharedTimeLogSection();
+      });
+    });
+    const totalEl = document.getElementById('sh_timeLogTotal');
+    if(totalEl){
+      const total = modalTimeLog.reduce((sum,l)=>sum + (Number(l.minutes)||0), 0);
+      totalEl.textContent = `Toplam harcanan süre: ${formatMinutes(total)}`;
+    }
+  }
+  function addSharedTimeLogEntry(){
+    const minInput = document.getElementById('sh_timeLogMinutes');
+    const noteInput = document.getElementById('sh_timeLogNote');
+    const minutes = Number(minInput.value);
+    if(!minutes || minutes <= 0){ alert('Geçerli bir dakika değeri girin.'); return; }
+    modalTimeLog.push({id: uid(), minutes, note: noteInput.value.trim(), date: todayStr(), loggedAt: Date.now()});
+    minInput.value = '';
+    noteInput.value = '';
+    renderSharedTimeLogSection();
+    minInput.focus();
+  }
+  document.getElementById('sh_btnAddTimeLog').addEventListener('click', addSharedTimeLogEntry);
+  document.getElementById('sh_timeLogMinutes').addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter'){ e.preventDefault(); addSharedTimeLogEntry(); }
+  });
+  document.getElementById('sh_timeLogNote').addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter'){ e.preventDefault(); addSharedTimeLogEntry(); }
+  });
+  renderSharedTimeLogSection();
+  document.getElementById('sh_timeTrackToggle').addEventListener('change', (e)=>{
+    modalTimeTrackingEnabled = e.target.checked;
+    document.getElementById('sh_timeTrackBody').style.display = modalTimeTrackingEnabled ? 'block' : 'none';
   });
 
   // Madde 5.4: atanan görevlerde yorum/not alışverişi. Sadece var olan (kaydedilmiş) görevlerde
@@ -3810,18 +4050,19 @@ function openSharedTaskModal(opts){
     renderAttachSection();
   }
 
+  // Madde 8: bu gösterge de kişisel görev modalindeki gibi 3 kat büyütüldü (progress-big-*).
   function renderProgressField(){
     const field = document.getElementById('sh_progressField');
     if(!isLeafNow){
       const pct = isEdit ? calcAssignedProgress(combined, existing.id) : 0;
-      field.innerHTML = `<label>Tamamlanma Oranı (%)</label><div class="disabled-note" title="Alt görevlerin ortalamasından otomatik hesaplanır">otomatik (alt görevlerden) — %${Math.round(pct)}</div>`;
+      field.innerHTML = `<div class="progress-big-value" title="Alt görevlerin ortalamasından otomatik hesaplanır">otomatik (alt görevlerden) — %${Math.round(pct)}</div>`;
     } else if(modalChecklist.length > 0){
       const pct = checklistProgress(modalChecklist);
       const doneCount = modalChecklist.filter(i=>i.done).length;
-      field.innerHTML = `<label>Tamamlanma Oranı (%)</label><div class="disabled-note" title="Kontrol listesindeki işaretli madde oranından otomatik hesaplanır">otomatik (kontrol listesi: ${doneCount}/${modalChecklist.length}) — %${Math.round(pct)}</div>`;
+      field.innerHTML = `<div class="progress-big-value" title="Kontrol listesindeki işaretli madde oranından otomatik hesaplanır">otomatik (kontrol listesi: ${doneCount}/${modalChecklist.length}) — %${Math.round(pct)}</div>`;
     } else {
       const val = isEdit ? (existing.manualProgress||0) : 0;
-      field.innerHTML = `<label>Tamamlanma Oranı (%)</label><input type="range" min="0" max="100" step="5" id="sh_prog" value="${val}"><div class="hint" id="sh_prog_val">${val}%</div>`;
+      field.innerHTML = `<input type="range" min="0" max="100" step="5" id="sh_prog" class="progress-big-slider" value="${val}"><div class="progress-big-value" id="sh_prog_val">${val}%</div>`;
       const slider = document.getElementById('sh_prog');
       slider.addEventListener('input', ()=>{
         document.getElementById('sh_prog_val').textContent = slider.value + '%';
@@ -3851,7 +4092,10 @@ function openSharedTaskModal(opts){
     const title = document.getElementById('sh_title').value.trim();
     if(!title){ alert('Başlık zorunludur.'); return; }
     const desc = document.getElementById('sh_desc').value.trim();
-    const statusTag = document.getElementById('sh_statustag').value;
+    // Madde #100: statusTag artık her zaman bir <select>'ten okunamaz — mini görevi ya da alt
+    // görevi olan bir görevde bu alan pasiftir ve DOM'da <select> yoktur. modalSharedStatusTag
+    // her durumda güncel değeri tutar.
+    const statusTag = modalSharedStatusTag;
     const start = document.getElementById('sh_start').value;
     const due = document.getElementById('sh_due').value;
     const comp = document.getElementById('sh_comp').value;
@@ -3875,6 +4119,7 @@ function openSharedTaskModal(opts){
         title, description: desc, statusTag,
         startDate: start, dueDate: due, completionDate: comp,
         priority: prio, manualProgress: prog, checklist: modalChecklist, attachments: modalAttachments,
+        timeLog: modalTimeLog, timeTrackingEnabled: modalTimeTrackingEnabled,
         lastUpdatedByUid: cloudUser.uid,
         lastUpdatedByName: who,
         lastUpdatedByEmail: normalizeEmail(cloudUser.email),
@@ -3909,6 +4154,7 @@ function openSharedTaskModal(opts){
         title, description: desc, statusTag,
         startDate: start, dueDate: due, completionDate: comp,
         priority: prio, manualProgress: prog, checklist: modalChecklist, attachments: modalAttachments,
+        timeLog: modalTimeLog, timeTrackingEnabled: modalTimeTrackingEnabled,
         parentId: parentTask ? parentTask.id : null,
         ownerUid, ownerEmail, ownerName,
         assigneeUid, assigneeEmail, assigneeName,
@@ -3937,13 +4183,15 @@ function openSharedTaskModal(opts){
     return JSON.stringify({
       title: document.getElementById('sh_title').value,
       desc: document.getElementById('sh_desc').value,
-      statusTag: document.getElementById('sh_statustag').value,
+      statusTag: modalSharedStatusTag,
       prio: document.getElementById('sh_prio').value,
       start: document.getElementById('sh_start').value,
       due: document.getElementById('sh_due').value,
       comp: document.getElementById('sh_comp').value,
       checklist: modalChecklist,
       attachments: modalAttachments.map(a=>a.id),
+      timeLog: modalTimeLog,
+      timeTrack: modalTimeTrackingEnabled,
       prog: document.getElementById('sh_prog') ? document.getElementById('sh_prog').value : null,
       assignee: document.getElementById('sh_assignee') ? document.getElementById('sh_assignee').value : null
     });
