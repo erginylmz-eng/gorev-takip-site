@@ -592,7 +592,7 @@ varsa işaretli oranı, (3) o da yoksa manualProgress alanından ELLE girilen de
 // tam değişiklik geçmişi repo kökündeki CHANGELOG.md dosyasında (Keep a Changelog biçiminde)
 // tutulur. Sürüm numarası sayfanın üst kısmında küçük bir etiket olarak gösterilir ki hangi
 // sürümün canlıda olduğu bir bakışta anlaşılsın (örn. destek/hata bildirimi sırasında faydalı).
-const APP_VERSION = '1.9.3';
+const APP_VERSION = '1.9.4';
 if(typeof document !== 'undefined' && document.getElementById){
   const versionTagEl = document.getElementById('appVersionTag');
   if(versionTagEl) versionTagEl.textContent = 'v' + APP_VERSION;
@@ -656,12 +656,47 @@ function saveLocalCache(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(stat
 // bloğuna bakınız) ayrıca Firestore'a da (kısa bir gecikmeyle) yazar.
 function saveState(){
   if(typeof invalidateProgressCache === 'function') invalidateProgressCache();
+  if(typeof invalidateChildrenIndex === 'function') invalidateChildrenIndex();
   saveLocalCache();
   if(typeof onStateSaved === 'function') onStateSaved();
 }
 
 // ---------------- Hesaplama yardımcıları ----------------
-function getChildren(taskId){ return state.tasks.filter(t=>t.parentId===taskId); }
+// Performans notu: getChildren() ağaç render'ında (liste, Gantt, arama, Excel dışa aktarma,
+// calcProgress'in kendisi) her düğüm için tekrar tekrar çağrılıyordu ve her çağrı state.tasks
+// dizisinin TAMAMINI O(n) tarayarak filtreliyordu. N görevli bir ağacı tamamen render etmek bu
+// yüzden O(n²) sürüyordu — küçük ölçekte (yüzlerce görev) fark edilmiyor ama ölçek büyüdükçe
+// (ölçülen: 96 görev→3ms, 296→11ms, 900→31ms, 1800→113ms) süper-doğrusal büyüyordu.
+// Çözüm: parentId -> [çocuklar] eşlemesini TEK SEFERDE (O(n)) kurup önbelleğe alıyoruz;
+// getChildren() artık O(1) bir Map okuması. Önbellek, calcProgress'teki _progressCache ile AYNI
+// desende, state değiştiğinde (saveState) ve her render() başında geçersiz kılınıyor, bu yüzden
+// bayat veri döndürme riski yok.
+let _childrenIndex = null;
+// state.tasks bazı yerlerde (deleteTaskCascade, restoreTrashBatch) DOĞRUDAN yeni bir diziyle
+// değiştiriliyor (state.tasks = ...). Önbelleği sadece elle invalidateChildrenIndex()
+// çağrılarına güvenerek geçersiz kılmak kırılgan (bir çağrı noktası unutulursa bayat veri
+// döner) — bu yüzden önbelleğin HANGİ state.tasks referansından kurulduğunu da saklıyoruz;
+// referans değiştiyse (örn. bir test veya fonksiyon state.tasks'ı doğrudan yeniden atadıysa)
+// otomatik olarak yeniden kuruluyor. Elle invalidateChildrenIndex() çağrıları ise sadece
+// YERİNDE (push gibi, referans değişmeyen) mutasyonlar için hâlâ gerekli.
+let _childrenIndexTasksRef = null;
+function invalidateChildrenIndex(){ _childrenIndex = null; _childrenIndexTasksRef = null; }
+function buildChildrenIndex(){
+  const idx = new Map();
+  for(const t of state.tasks){
+    const key = t.parentId;
+    if(!idx.has(key)) idx.set(key, []);
+    idx.get(key).push(t);
+  }
+  return idx;
+}
+function getChildren(taskId){
+  if(_childrenIndex === null || _childrenIndexTasksRef !== state.tasks){
+    _childrenIndex = buildChildrenIndex();
+    _childrenIndexTasksRef = state.tasks;
+  }
+  return _childrenIndex.get(taskId) || [];
+}
 
 function checklistProgress(checklist){
   if(!checklist || checklist.length === 0) return null;
@@ -901,6 +936,7 @@ function totalTimeLogMinutes(timeLog){
 
 function render(){
   invalidateProgressCache();
+  invalidateChildrenIndex();
   renderDash();
   renderSummary();
   renderFilterOptions();
@@ -1449,6 +1485,11 @@ function deleteTaskCascade(id){
   const toDelete = new Set([id, ...collectDescendantIds(id)]);
   const removed = state.tasks.filter(t=>toDelete.has(t.id));
   state.tasks = state.tasks.filter(t=>!toDelete.has(t.id));
+  // getChildren()'ın önbelleği (_childrenIndex) normalde saveState()/render() üzerinden geçersiz
+  // kılınır, ama bu fonksiyon state.tasks'ı DOĞRUDAN değiştiriyor — çağıranın hemen ardından
+  // saveState() çağırmasına güvenmek yerine (ki bazı senaryolarda çağırmayabilir), önbelleği
+  // burada da geçersiz kılıyoruz. Ucuz bir işlem (sadece bir işaretçiyi null yapıyor).
+  if(typeof invalidateChildrenIndex === 'function') invalidateChildrenIndex();
   ensureTrash(state);
   const deletedAt = Date.now();
   removed.forEach(t=> state.trash.push({task: t, deletedAt, rootId: id}));
@@ -1507,6 +1548,7 @@ function spawnNextRecurrence(task){
     createdAt: Date.now()
   };
   state.tasks.push(newTask);
+  if(typeof invalidateChildrenIndex === 'function') invalidateChildrenIndex();
   return newTask;
 }
 
@@ -1532,6 +1574,7 @@ function restoreTrashBatch(deletedAt){
   const batch = state.trash.filter(e=>e.deletedAt === deletedAt);
   if(batch.length === 0) return;
   state.tasks.push(...batch.map(e=>e.task));
+  if(typeof invalidateChildrenIndex === 'function') invalidateChildrenIndex();
   state.trash = state.trash.filter(e=>e.deletedAt !== deletedAt);
 }
 
@@ -3392,8 +3435,27 @@ function detachAssignedTaskListeners(){
   if(typeof renderDash === 'function' && document.getElementById('dash')) renderDash();
 }
 
+// Performans: kişisel görevlerdeki getChildren() ile aynı sorunun (her çağrının O(n) tam liste
+// taraması yapması) atanan/paylaşılan görev ağacı için de geçerli olduğu tespit edildi. Burada
+// WeakMap kullanıyoruz çünkü `list` parametresi (myAssignedToMe/myAssignedToOthers ya da bunların
+// birleşimi) her state güncellemesinde YENİ bir dizi referansı olarak atanıyor (asla yerinde
+// mutasyona uğramıyor — bkz. attachAssignedTaskListeners/detachAssignedTaskListeners), bu yüzden
+// WeakMap'in referans-bazlı doğası kendiliğinden geçersiz kılma sağlıyor: eski dizi artık
+// erişilemez hale geldiğinde WeakMap girdisi de otomatik olarak çöp toplanır, elle bir
+// invalidate çağrısına gerek kalmaz.
+const _sharedChildrenIndexCache = new WeakMap();
 function getSharedChildren(list, parentId){
-  return list.filter(t=>t.parentId === parentId);
+  let idx = _sharedChildrenIndexCache.get(list);
+  if(!idx){
+    idx = new Map();
+    for(const t of list){
+      const key = t.parentId;
+      if(!idx.has(key)) idx.set(key, []);
+      idx.get(key).push(t);
+    }
+    _sharedChildrenIndexCache.set(list, idx);
+  }
+  return idx.get(parentId) || [];
 }
 
 function calcAssignedProgress(list, taskId, _visited){
