@@ -161,6 +161,14 @@
   .cat-body.hidden{display:none;}
   .empty-cat{color:var(--sub);font-size:13px;padding:10px 4px;}
 
+  /* Aktif/Tamamlanan görev ayrımı: tamamlanan kök görevler, aktiflerin altında görsel olarak
+     ayrı bir bölümde (kesikli üst çizgi + küçük harf başlık) gösterilir; hafifçe soluklaştırılır
+     ki liste taranırken göze ilk çarpan aktif görevler olsun. */
+  .completed-section{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);}
+  .completed-heading{font-size:12px;font-weight:800;color:var(--sub);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;}
+  .completed-section .task-node{opacity:.7;}
+  .completed-section .task-node:hover{opacity:1;}
+
   .task-node{border:1px solid var(--line);border-radius:10px;margin-top:8px;background:var(--depth0);}
   .task-node[data-depth="1"]{background:var(--depth1);border-color:var(--depth1-border);}
   .task-node[data-depth="2"]{background:var(--depth2);border-color:var(--depth2-border);}
@@ -400,6 +408,7 @@
       <option value="progress">Devam Ediyor</option>
       <option value="done">Tamamlandı</option>
     </select>
+    <label class="checkbox-label" id="showCompletedLabel"><input type="checkbox" id="showCompletedToggle"> Tamamlananları göster</label>
     <div class="spacer"></div>
     <button class="link-btn" id="btnClearFilters" data-i18n="btnClearFilters">Filtreleri Temizle</button>
   </div>
@@ -592,7 +601,7 @@ varsa işaretli oranı, (3) o da yoksa manualProgress alanından ELLE girilen de
 // tam değişiklik geçmişi repo kökündeki CHANGELOG.md dosyasında (Keep a Changelog biçiminde)
 // tutulur. Sürüm numarası sayfanın üst kısmında küçük bir etiket olarak gösterilir ki hangi
 // sürümün canlıda olduğu bir bakışta anlaşılsın (örn. destek/hata bildirimi sırasında faydalı).
-const APP_VERSION = '1.9.4';
+const APP_VERSION = '1.9.5';
 if(typeof document !== 'undefined' && document.getElementById){
   const versionTagEl = document.getElementById('appVersionTag');
   if(versionTagEl) versionTagEl.textContent = 'v' + APP_VERSION;
@@ -873,6 +882,10 @@ let collapsedCats = new Set();
 let collapsedTasks = new Set();
 let activeCategoryFilter = '';
 let filters = {search:'', category:'', priority:'', status:''};
+// Aktif/Tamamlanan görev ayrımı: her kategoride kök (üst seviye) görevler tamamlanma durumuna
+// göre iki gruba ayrılır (bkz. renderCatList). "Tamamlanan Görevler" bölümü, kullanıcı bu
+// kutuyu işaretlemedikçe gizli kalır — varsayılan olarak sadece aktif görevler görünür.
+let showCompletedTasks = false;
 // Gantt görünüm durumu: Haftalık / Aylık / Yıllık gösterim şekli ve seçili dönem
 let ganttViewMode = 'month'; // 'week' | 'month' | 'year'
 let ganttWeekAnchor = (()=>{ const d = new Date(); d.setHours(0,0,0,0); return d; })(); // seçili haftadaki herhangi bir gün
@@ -1281,6 +1294,14 @@ function subtreeMatches(task){
   return getChildren(task.id).some(subtreeMatches);
 }
 
+// Bir kök görev "tamamlanan" sayılır mı? getTaskStatus ile aynı eşiği (calcProgress >= %99.999)
+// kullanır. Bir üst görevin ilerlemesi alt görevlerinin eşit ağırlıklı ortalaması olduğu için,
+// üst görev %100 ise TÜM alt görevleri de zaten %100'dür — bu yüzden kök görevi (ve dolayısıyla
+// altındaki tüm ağacı) tek parça halinde "Tamamlanan" bölümüne taşımak güvenli ve tutarlıdır.
+function isRootTaskCompleted(task){
+  return getTaskStatus(task) === 'done';
+}
+
 function renderCatList(){
   const wrap = document.getElementById('catList');
   const anyFilterActive = filters.search || filters.category || filters.priority || filters.status;
@@ -1289,20 +1310,45 @@ function renderCatList(){
     if(anyFilterActive){
       top = top.filter(subtreeMatches);
     }
+    // Aktif/Tamamlanan ayrımı (kategori altında): tamamlanan kök görevler ayrı bir bölümde,
+    // sadece showCompletedTasks işaretliyse gösterilir. İstisna: kullanıcı "Durum: Tamamlandı"
+    // filtresini AÇIKÇA seçtiyse (filters.status==='done'), bu bilinçli bir talep olduğu için
+    // tik kutusundan bağımsız olarak sonuçlar gösterilir — aksi halde filtre "sonuç yok" gibi
+    // görünüp kafa karıştırırdı.
+    const effectiveShowCompleted = showCompletedTasks || filters.status === 'done';
+    const activeTop = top.filter(t => !isRootTaskCompleted(t));
+    const completedTop = top.filter(t => isRootTaskCompleted(t));
+    const allTop = topLevelTasksOf(cat.id);
+    const totalActiveCount = allTop.filter(t => !isRootTaskCompleted(t)).length;
+    const totalCompletedCount = allTop.filter(t => isRootTaskCompleted(t)).length;
     const pct = categoryProgress(cat.id);
     const collapsed = collapsedCats.has(cat.id);
-    const bodyHtml = top.length
-      ? top.map(t=>renderTaskNode(t, 0)).join('')
-      : `<div class="empty-cat">${anyFilterActive ? 'Filtreye uyan görev yok.' : 'Bu kategoride henüz görev yok.'}</div>`;
+    const activeHtml = activeTop.length
+      ? activeTop.map(t=>renderTaskNode(t, 0)).join('')
+      : `<div class="empty-cat">${
+          anyFilterActive
+            ? 'Filtreye uyan aktif görev yok.'
+            : (completedTop.length ? 'Bu kategoride aktif görev yok. Tamamlananları görmek için yukarıdaki kutuyu işaretleyin.' : 'Bu kategoride henüz görev yok.')
+        }</div>`;
+    const completedHtml = (effectiveShowCompleted && completedTop.length)
+      ? `<div class="completed-section">
+          <div class="completed-heading">✔️ Tamamlanan Görevler (${completedTop.length})</div>
+          ${completedTop.map(t=>renderTaskNode(t, 0)).join('')}
+        </div>`
+      : '';
+    const countTagText = totalCompletedCount
+      ? `${totalActiveCount} aktif · ${totalCompletedCount} tamamlanan`
+      : `${totalActiveCount} görev`;
     return `<div class="cat-section" style="--c:${cat.color}">
       <div class="cat-header ${collapsed?'collapsed':''}" data-cat="${cat.id}">
         <span class="chev">▾</span>
         <span class="title">${cat.name}</span>
-        <span class="count-tag">${topLevelTasksOf(cat.id).length} görev</span>
+        <span class="count-tag">${countTagText}</span>
         <span class="pct-tag">${pct.toFixed(0)}%</span>
       </div>
       <div class="cat-body ${collapsed?'hidden':''}" data-catbody="${cat.id}">
-        ${bodyHtml}
+        ${activeHtml}
+        ${completedHtml}
         <button class="link-btn" data-addtop="${cat.id}" style="margin-top:6px;">+ Bu kategoriye görev ekle</button>
       </div>
     </div>`;
@@ -2377,6 +2423,10 @@ document.getElementById('filterStatus').addEventListener('change', (e)=>{
   filters.status = e.target.value;
   renderCatList();
 });
+document.getElementById('showCompletedToggle').addEventListener('change', (e)=>{
+  showCompletedTasks = e.target.checked;
+  renderCatList();
+});
 document.getElementById('btnClearFilters').addEventListener('click', ()=>{
   filters = {search:'', category:'', priority:'', status:''};
   activeCategoryFilter='';
@@ -2384,6 +2434,9 @@ document.getElementById('btnClearFilters').addEventListener('click', ()=>{
   document.getElementById('filterCategory').value='';
   document.getElementById('filterPriority').value='';
   document.getElementById('filterStatus').value='';
+  // Not: "Tamamlananları göster" kutusu kasıtlı olarak burada sıfırlanmıyor — bu bir arama/süzme
+  // filtresi değil, kalıcı bir görünüm tercihi; filtreleri temizlemek kullanıcının bu tercihini
+  // bozmamalı.
   render();
   if(typeof renderAssignedSection === 'function') renderAssignedSection();
 });
