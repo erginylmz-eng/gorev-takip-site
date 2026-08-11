@@ -480,6 +480,7 @@
       </div>
 
       <div id="catList"></div>
+      <button class="link-btn" id="btnAddCategory" style="margin-top:8px;">+ Yeni Kategori Ekle</button>
     </div>
   </div>
 
@@ -509,6 +510,30 @@
     <h2 data-i18n="syncGateTitle">☁️ Bulut Senkronizasyonu</h2>
     <p class="hint" style="margin:0 0 18px;font-size:13px;" data-i18n="syncGateDesc">Verilerini telefon ve bilgisayar arasında senkronize etmek için Google hesabınla giriş yap.</p>
     <button class="btn-solid" id="btnGoogleSignIn" style="width:100%;" data-i18n="syncGateBtn">Google ile Giriş Yap</button>
+  </div>
+</div>
+
+<!-- Kategori ekleme/düzenleme modalı: kategori adı ve rengi buradan değiştirilebilir, yeni
+     kategori eklenebilir. Silme işlemi ise doğrudan bir onay diyaloğu (confirm) ile kategori
+     başlığındaki 🗑️ ikonundan tetiklenir, ayrı bir modal gerektirmez. -->
+<div id="categoryModal" class="modal-overlay" style="display:none;">
+  <div class="modal">
+    <h2 id="categoryModalTitle">Yeni Kategori Ekle</h2>
+    <div class="field">
+      <label for="catNameInput">Kategori Adı</label>
+      <input type="text" id="catNameInput" maxlength="60" placeholder="Örn. Lojistik Operasyonları">
+    </div>
+    <div class="field">
+      <label for="catColorInput">Renk</label>
+      <input type="color" id="catColorInput" value="#2563eb" style="width:100%;height:42px;border:1px solid var(--line);border-radius:8px;padding:2px;cursor:pointer;background:var(--card);">
+    </div>
+    <div class="modal-actions">
+      <div class="left"></div>
+      <div>
+        <button class="btn-outline" id="btnCategoryCancel">İptal</button>
+        <button class="btn-solid" id="btnCategorySave">Kaydet</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -768,7 +793,7 @@ varsa işaretli oranı, (3) o da yoksa manualProgress alanından ELLE girilen de
 // tam değişiklik geçmişi repo kökündeki CHANGELOG.md dosyasında (Keep a Changelog biçiminde)
 // tutulur. Sürüm numarası sayfanın üst kısmında küçük bir etiket olarak gösterilir ki hangi
 // sürümün canlıda olduğu bir bakışta anlaşılsın (örn. destek/hata bildirimi sırasında faydalı).
-const APP_VERSION = '1.10.0';
+const APP_VERSION = '1.11.0';
 if(typeof document !== 'undefined' && document.getElementById){
   const versionTagEl = document.getElementById('appVersionTag');
   if(versionTagEl) versionTagEl.textContent = 'v' + APP_VERSION;
@@ -782,6 +807,11 @@ const DEFAULT_CATEGORIES = [
   {id:'cat4', name:'Finans', color:'#7c3aed'},
   {id:'cat5', name:'Sözleşme Süreçleri', color:'#dc2626'},
 ];
+
+// Kategori yönetimi: kullanıcı kategori adını/rengini değiştirebilir, yeni kategori ekleyebilir
+// veya bir kategoriyi silebilir. Yeni bir kategori eklenirken varsayılan renk bu paletten sırayla
+// seçilir (kullanıcı isterse rengi kendi değiştirebilir).
+const CATEGORY_COLOR_PALETTE = ['#2563eb','#16a34a','#d97706','#7c3aed','#dc2626','#0891b2','#db2777','#65a30d','#9333ea','#ea580c'];
 
 function uid(){ return 'id_' + Math.random().toString(36).slice(2,10) + Date.now().toString(36); }
 function todayStr(){ const d=new Date(); return d.toISOString().slice(0,10); }
@@ -1516,9 +1546,11 @@ function renderCatList(){
     return `<div class="cat-section" style="--c:${cat.color}">
       <div class="cat-header ${collapsed?'collapsed':''}" data-cat="${cat.id}">
         <span class="chev">▾</span>
-        <span class="title">${cat.name}</span>
+        <span class="title">${escapeHtml(cat.name)}</span>
         <span class="count-tag">${countTagText}</span>
         <span class="pct-tag">${pct.toFixed(0)}%</span>
+        <button class="icon-btn cat-action-btn" data-editcat="${cat.id}" title="Kategoriyi düzenle" aria-label="Kategoriyi düzenle">✏️</button>
+        <button class="icon-btn cat-action-btn" data-delcat="${cat.id}" title="Kategoriyi sil" aria-label="Kategoriyi sil">🗑️</button>
       </div>
       <div class="cat-body ${collapsed?'hidden':''}" data-catbody="${cat.id}">
         ${activeHtml}
@@ -1539,6 +1571,18 @@ function renderCatList(){
     el.addEventListener('click', (e)=>{
       e.stopPropagation();
       openModal({categoryId: el.getAttribute('data-addtop'), parentId:null});
+    });
+  });
+  wrap.querySelectorAll('[data-editcat]').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      openCategoryModal(el.getAttribute('data-editcat'));
+    });
+  });
+  wrap.querySelectorAll('[data-delcat]').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      deleteCategory(el.getAttribute('data-delcat'));
     });
   });
   attachTaskNodeEvents(wrap);
@@ -1718,6 +1762,80 @@ function collectDescendantIds(id){
   let ids = [];
   getChildren(id).forEach(c=>{ ids.push(c.id); ids = ids.concat(collectDescendantIds(c.id)); });
   return ids;
+}
+
+// ---------------- Kategori yönetimi (ekleme / düzenleme / silme) ----------------
+// Alt görevler kategoriyi her zaman en üst görevden miras aldığı için (bkz. openModal/saveTask),
+// bir kategorideki TÜM görevler (kök + tüm alt görevler) aynı categoryId'ye sahiptir — bu yüzden
+// bir kategoriyi silerken tek tek ağaç gezmeye gerek yok, categoryId eşleşen her görev o
+// kategoriye ait demektir.
+let editingCategoryId = null; // null: yeni kategori ekleniyor, dolu: mevcut kategori düzenleniyor
+function openCategoryModal(catId){
+  editingCategoryId = catId || null;
+  const cat = catId ? state.categories.find(c=>c.id===catId) : null;
+  const titleEl = document.getElementById('categoryModalTitle');
+  if(titleEl) titleEl.textContent = cat ? 'Kategoriyi Düzenle' : 'Yeni Kategori Ekle';
+  const nameInput = document.getElementById('catNameInput');
+  const colorInput = document.getElementById('catColorInput');
+  if(nameInput) nameInput.value = cat ? cat.name : '';
+  if(colorInput) colorInput.value = cat ? cat.color : CATEGORY_COLOR_PALETTE[state.categories.length % CATEGORY_COLOR_PALETTE.length];
+  const modal = document.getElementById('categoryModal');
+  if(modal) modal.style.display = 'flex';
+  if(nameInput && typeof nameInput.focus === 'function') nameInput.focus();
+}
+function closeCategoryModal(){
+  const modal = document.getElementById('categoryModal');
+  if(modal) modal.style.display = 'none';
+  editingCategoryId = null;
+}
+function saveCategoryFromModal(){
+  const nameInput = document.getElementById('catNameInput');
+  const colorInput = document.getElementById('catColorInput');
+  const name = (nameInput ? nameInput.value : '').trim();
+  if(!name){
+    alert('Kategori adı boş olamaz.');
+    return;
+  }
+  const color = (colorInput && colorInput.value) ? colorInput.value : '#2563eb';
+  if(editingCategoryId){
+    const cat = state.categories.find(c=>c.id===editingCategoryId);
+    if(cat){ cat.name = name; cat.color = color; }
+  } else {
+    state.categories.push({id: uid(), name, color});
+  }
+  saveState();
+  closeCategoryModal();
+  render();
+}
+// Bir kategoriyi ve içindeki tüm görevleri (kalıcı olarak değil, çöp kutusuna taşıyarak) siler —
+// deleteTaskCascade ile aynı geri-alınabilir silme mantığı, tek seferde tüm kategori için.
+function deleteCategoryCascade(catId){
+  const toRemove = state.tasks.filter(t=>t.categoryId===catId);
+  if(toRemove.length){
+    state.tasks = state.tasks.filter(t=>t.categoryId!==catId);
+    if(typeof invalidateChildrenIndex === 'function') invalidateChildrenIndex();
+    ensureTrash(state);
+    const deletedAt = Date.now();
+    toRemove.forEach(t=> state.trash.push({task:t, deletedAt, rootId:'cat_'+catId}));
+  }
+  state.categories = state.categories.filter(c=>c.id!==catId);
+}
+function deleteCategory(catId){
+  const cat = state.categories.find(c=>c.id===catId);
+  if(!cat) return;
+  if(state.categories.length <= 1){
+    alert('En az bir kategori kalmalı, son kategoriyi silemezsin.');
+    return;
+  }
+  const taskCount = state.tasks.filter(t=>t.categoryId===catId).length;
+  const msg = taskCount > 0
+    ? `"${cat.name}" kategorisini silmek istediğine emin misin? Bu kategorideki ${taskCount} görev çöp kutusuna taşınacak.`
+    : `"${cat.name}" kategorisini silmek istediğine emin misin?`;
+  if(!confirm(msg)) return;
+  deleteCategoryCascade(catId);
+  if(filters.category === catId) filters.category = '';
+  saveState();
+  render();
 }
 
 // ---------------- Tekrarlanan (periyodik) görevler (madde 5.1) ----------------
@@ -2613,6 +2731,17 @@ document.getElementById('btnClearFilters').addEventListener('click', ()=>{
   // bozmamalı.
   render();
   if(typeof renderAssignedSection === 'function') renderAssignedSection();
+});
+
+// ---------------- Kategori ekleme/düzenleme modalı: buton kablolaması ----------------
+document.getElementById('btnAddCategory').addEventListener('click', ()=>{ openCategoryModal(null); });
+document.getElementById('btnCategoryCancel').addEventListener('click', closeCategoryModal);
+document.getElementById('btnCategorySave').addEventListener('click', saveCategoryFromModal);
+document.getElementById('categoryModal').addEventListener('click', (e)=>{
+  if(e.target && e.target.id === 'categoryModal') closeCategoryModal();
+});
+document.getElementById('catNameInput').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter'){ e.preventDefault(); saveCategoryFromModal(); }
 });
 
 // ---------------- Excel'e Aktar ----------------
