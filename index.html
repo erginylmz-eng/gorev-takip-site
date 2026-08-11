@@ -43,10 +43,27 @@
   }
   *{box-sizing:border-box;}
   body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);overflow-x:hidden;}
-  header.topbar{background:linear-gradient(120deg,#0f1b3d,#1e3a8a);color:#fff;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
+  header.topbar{background:linear-gradient(120deg,#0f1b3d,#1e3a8a);color:#fff;padding:18px 28px 20px;display:flex;flex-direction:column;gap:14px;}
   header.topbar h1{margin:0;font-size:20px;font-weight:700;letter-spacing:.2px;}
   header.topbar .sub{font-size:13px;color:#c7d2fe;margin-top:2px;}
-  header.topbar .actions{display:flex;gap:8px;flex-wrap:wrap;}
+  .topbar-top{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;}
+  .brand-logo{height:46px;width:auto;border-radius:8px;display:block;flex-shrink:0;}
+  .topbar-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .topbar-controls .sync-badge{font-size:12px;color:#c7d2fe;padding:0 4px;}
+  .topbar-primary-actions{display:flex;gap:8px;margin-left:auto;}
+  /* Üst bar menü sekmeleri (Veri/Kullanıcılar/Ayarlar/Bildirimler): eskiden tek tek dizilen 8+
+     buton artık 4 kompakt sekme altında toplanıyor; sadece "Yeni Görev" ve "Görev Ata" dışarıda,
+     her zaman görünür kalıyor. Sekmeler hem fare ile üstüne gelince (hover) hem de tıklanınca
+     (mobil/klavye için) açılır; dışarı tıklanınca veya Esc'e basılınca kapanır. */
+  .menu-tabs{display:flex;gap:6px;flex-wrap:wrap;}
+  .menu-tab{position:relative;}
+  .menu-tab-trigger{background:rgba(255,255,255,.12);color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:600;min-height:40px;display:flex;align-items:center;gap:6px;position:relative;}
+  .menu-tab-trigger:hover{background:rgba(255,255,255,.22);}
+  .menu-caret{font-size:10px;opacity:.8;}
+  .menu-tab-panel{display:none;position:absolute;top:calc(100% + 6px);left:0;min-width:210px;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px rgba(15,20,35,.25);padding:6px;z-index:60;flex-direction:column;gap:2px;}
+  .menu-tab:hover .menu-tab-panel,.menu-tab.open .menu-tab-panel{display:flex;}
+  .menu-tab-panel .btn{background:none;color:var(--ink);border-radius:7px;padding:9px 10px;font-size:13px;font-weight:600;text-align:left;width:100%;min-height:38px;justify-content:flex-start;}
+  .menu-tab-panel .btn:hover{background:var(--card2);}
   button{cursor:pointer;font-family:inherit;}
   .btn{border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:600;transition:.15s;min-height:40px;}
   .btn-primary{background:#fff;color:#1e3a8a;}
@@ -57,10 +74,15 @@
   .btn-excel:hover{background:#15803d;}
   main{max-width:1180px;margin:0 auto;padding:22px 20px 60px;}
 
-  .section-heading{display:flex;align-items:center;gap:9px;margin:28px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--line);}
+  .section-heading{display:flex;align-items:center;gap:9px;margin:28px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--line);cursor:pointer;user-select:none;}
   .section-heading:first-child{margin-top:0;}
   .section-heading .sh-icon{font-size:15px;line-height:1;opacity:.8;}
   .section-heading .sh-text{font-size:12.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--sub);}
+  /* Açılır/kapanır bölümler (Görev Durumu/Takvim/Görevlerim/Online Görevler): varsayılan hep
+     açık, kullanıcı başlığa tıklayınca kapatabilir; tercih localStorage'da kalıcı olur. */
+  .section-heading .sh-chevron{margin-left:auto;font-size:12px;color:var(--sub);transition:.15s;}
+  .section-heading.collapsed .sh-chevron{transform:rotate(-90deg);}
+  .section-heading:hover .sh-text{color:var(--ink);}
 
   .gantt-section{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:18px;}
   .gantt-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
@@ -76,7 +98,7 @@
   .gantt-body{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;}
   .gantt-sidebar{width:180px;flex-shrink:0;border-right:2px solid var(--line);background:var(--depth0);}
   .gantt-sidebar-header{height:44px;border-bottom:1px solid var(--line);background:var(--card2);}
-  .gantt-row-label{height:34px;display:flex;align-items:center;gap:6px;padding:0 8px;font-size:11.5px;font-weight:600;border-bottom:1px solid #eef1f7;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .gantt-row-label{height:34px;display:flex;align-items:center;gap:6px;padding:0 8px;font-size:11.5px;font-weight:600;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .gantt-row-label.depth-1{padding-left:22px;font-weight:500;color:var(--sub);}
   .gantt-row-label.depth-2{padding-left:34px;font-weight:500;color:var(--sub);}
   .gantt-row-label.depth-3{padding-left:46px;font-weight:500;color:var(--sub);}
@@ -87,11 +109,11 @@
   .gantt-header{display:flex;height:22px;}
   .gantt-header-days{border-bottom:1px solid var(--line);}
   .gantt-month-cell{flex-shrink:0;font-size:11px;font-weight:700;color:var(--sub);border-left:1px solid var(--line);padding-left:4px;display:flex;align-items:center;background:var(--card2);box-sizing:border-box;}
-  .gantt-day-cell{flex-shrink:0;font-size:9.5px;color:var(--sub);text-align:center;display:flex;align-items:center;justify-content:center;border-left:1px solid #f0f2f7;box-sizing:border-box;}
+  .gantt-day-cell{flex-shrink:0;font-size:9.5px;color:var(--sub);text-align:center;display:flex;align-items:center;justify-content:center;border-left:1px solid var(--line);box-sizing:border-box;}
   .gantt-day-cell.weekend{background:var(--card2);}
-  .gantt-day-cell.is-today{background:#dbeafe;color:#1e3a8a;font-weight:800;}
+  .gantt-day-cell.is-today{background:color-mix(in srgb, var(--blue) 25%, var(--card));color:var(--ink);font-weight:800;}
   .gantt-rows{position:relative;}
-  .gantt-bar-row{height:34px;position:relative;border-bottom:1px solid #eef1f7;box-sizing:border-box;}
+  .gantt-bar-row{height:34px;position:relative;border-bottom:1px solid var(--line);box-sizing:border-box;}
   .gantt-bar-row.weekend-shade::before{content:'';}
   .gantt-bar{position:absolute;top:6px;height:22px;border-radius:6px;background:color-mix(in srgb, var(--c) 22%, white);border:1px solid color-mix(in srgb, var(--c) 55%, white);cursor:pointer;overflow:hidden;box-sizing:border-box;min-width:6px;}
   .gantt-bar .gantt-bar-fill{position:absolute;left:0;top:0;bottom:0;background:var(--c);border-radius:5px 0 0 5px;}
@@ -298,6 +320,14 @@
     header.topbar h1{font-size:17px;}
     header.topbar .actions{width:100%;}
     header.topbar .actions .btn{flex:1;white-space:nowrap;}
+    .brand-logo{height:34px;}
+    .topbar-controls{width:100%;}
+    .menu-tabs{width:100%;}
+    .menu-tab{flex:1 1 calc(50% - 6px);}
+    .menu-tab-trigger{width:100%;justify-content:center;}
+    .menu-tab-panel{left:0;right:0;min-width:0;}
+    .topbar-primary-actions{width:100%;margin-left:0;}
+    .topbar-primary-actions .btn{flex:1;white-space:nowrap;}
     main{padding:14px 10px 50px;}
     .dash{gap:10px;}
     .summary-row{gap:10px;}
@@ -323,108 +353,148 @@
 <body>
 
 <header class="topbar">
-  <div>
-    <h1><span data-i18n="appTitle">📋 Görev Takip Merkezi</span> <span id="appVersionTag" title="Sürüm notları için CHANGELOG.md dosyasına bakın" style="font-size:11px;font-weight:600;color:var(--sub);vertical-align:middle;"></span></h1>
-    <div class="sub"><span data-i18n="appSubtitle">Satış Geliştirme Yöneticisi Paneli</span></div>
+  <div class="topbar-top">
+    <div>
+      <h1><span data-i18n="appTitle">📋 Görev Takip Merkezi</span> <span id="appVersionTag" title="Sürüm notları için CHANGELOG.md dosyasına bakın" style="font-size:11px;font-weight:600;color:var(--sub);vertical-align:middle;"></span></h1>
+      <div class="sub"><span data-i18n="appSubtitle">Satış Geliştirme Yöneticisi Paneli</span></div>
+    </div>
+    <img class="brand-logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPYAAAD3CAYAAAAuTqltAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAERwSURBVHhe7b13cBzZnef5eVneoOA9QNCAAGhBb5psq/at1rTMSKMZzUgzGncTF7dxf1xc3MTuxVzcxVzEXezd7u3ebYy02h2NxsmN1Gq1TBu1b5LdZNOTIEEChPcoVBXKV+a7P7KABguogiuAYPF9IrKbyF9W1qvM9332935PSCklCoWioNAyTygUivsfMbfGNlIpEtOBu69QKBT3BXZvMZrVCpnCDvbd5uJ3/s+51yoUivuE9m/+D/gat8E8Yffc4vy3/nrutQqF4j5h/5/+Jb6mZlB9bIWiMFHCVigKECVshaIAUcJWKAoQJWyFogBRwlYoChAlbIWiAFHCVigKECVshaIAUcJWKAqQ/LmUCoGwWBGITItCoVgCUhpIXQdWtpJ6rktpfoQtJY7yakq378Hq8q44YQrFg4oQgtjUBJMd59Ej0yCWX0HmXdjS0CnbcZDtn/sarpKyTLNCoVgCgb5uOn70HaJj/Qix/F7yGi0CkaCCsSgUK0fKvLV28yhshUKxUchjU/wA21/8Gq7ScqSUTHZepfetn2VeqlAo5tDy+W/gqaoDINDbRcePv0N0bGDVTfG1EbZhMHLxDB0/+JvMSxUKxRwO/MW/mY16kk9hL//TS0YgNE0d6lBHjoM1mh5eQ2ErFIp7hRK2QlGAKGErFAWIErZCUYAoYSsUBYgStkJRgChhKxQFiBK2QlGAKGErFAWIErZCUYAoYSsUBYgStkJRgChhKxQFiBK2QlGAKGErFAWIErZCUYAoYSsUBYgStkJRgChhKxQFiBK2QlGAKGErFAWIErZCUYAoYSsUBYgStkJRgChhKxQFiBK2QlGAKGErFAWIErZCUYAoYSsUBYgStkJRgChhKxQFiBK2QlGAKGErFAWIErZCUYAoYSsUBUjehC2lRBo6Uhqz/1coFPeGvAhbaBZCd25y5bv/F2f/n/+Zc//xr7jz+o8yL1MoFOtEXoQNoCdiRMdHCI8MEB4dJBHwZ16iUCjWibwJGwAhEOkDITKtCoVincivsBUKxYZACVuhKECUsBWKAkQJW6EoQJSwFYoCRAlboShAlLAVigJECVuhKECUsBWKAiSvwhZCK0yPMyHM33avEAKhaQjNgrBYFz40C0Jbh+c/41WY7biXZKZloeMBQUgp5cwfwZ5bnP/WX999xRKR0qCs7QCJ6SDhwW749Lb3NULTKGpqw2K3M9nxydoLXEoQAs1qQ7PasNgduOu24K6qw+ErwVFUgmazwczjFSANnXhwingoSGxihPBQD6lwED2VxEgmkIael3QLq52ihm3YiooXfL9SSoJdV0lFw5mmdUDgbdiKo6TcfCgZSCmJjg0QHRtcMO33iv1//q/xNW4FINDbRcePv0N0bGBF72v/n/4lvqZmyKuwDYPqQ49RsesAXa/+A7HJscxL7ktclXU0f/ZrjFw8zcjZt81acQ2QhoHQLNi8PlxlVRRv20Vp8w68VXVoVlu6xhYgNAR36dr8tzTSS2cNpJ4iNjXJVG8X/puXCA/1kJwOoifi5j0WyPhLQrPQ8tLXqW4/tuCyXGkY3Hr1+4yefx9p6JnmtUNKHGXV7Pjyn1BU17Rg2oxEgs5Xv8/4pVML2u8VayXs5X96EXz1TdQeeQJhtWWa7jssdicNDz+Hp6Yu05Q/0mJ0VdZS2X6Uls//Ebv/4F+x9ckXKd28HZvbg8VuR7Omm9vpJuXcxTZCCIRmQbNYsdjsWJ1uvDUNNBx+mN1f/W/Y9Xv/HXUPPU1Rw1aExYY0VpaxZSqJv+sGqXgMi80+77DaHVTvO4bF7sz86JoiDZ3S5p24K2vRrOYzyDxigUmmOi9tKFGvJXkXtrBYqT14gpKtOzdUk2e5SGlQvvMgVTv3IzRLpjkvSEPHXlxGzaFH2P7SN2j7wh9S0bYHm8u98lp1LkIgLBaK6hrZ9swXaf3iN2l85Hk8dU3mq1nm+xGawN95mcj4cKbJRAi8tQ14GrasX39WSixuLyVbWtLPbWFGLn1EKh7NPF2w5F3YILG5vTScfAZ7ScWyM8+GQEq8dVtoOPEUVpd7TsM3X0hAUNK8h20v/C7bX/w9yra2oq1xK8dbU8/mz7xEy0tfp+bQI2gO1zLfjyA1HWCy8xp6MplpBMDqdFGz/wQiHwXTEpCGQXFTC76m7ZmmWaL+Cfw3LmKkFk5zIbIGwjYpadpG7eFHEZa1zaxrgbBYqTn0CN7ahkzT6pESi9NL3YmnaX3pD6jafRCL3ZF51ZohBBQ3bmXbs19iy7NfNgebliNuIRi98AGJ0FSmBQAhNIo3bcVVvQbPbh4SzWanuGk7rpLyTOMsEzevEA/616mo2RismbA1q42q9qOUbN+14j7dvUAaBuW7DlK568CKBjByIiV2XymbHv8cW598CVd5VeYV64bN7aXu0Elaf/tP8dRthmX81kRggombV7K+V7u3mLLW9uUVGCtAGhJXVR0lzbsyTbMkoxH8Ny6YI/Xr1T3YACz9ba4Ad1kldUcew1lefV8MWkjDwFVVT+2hR3EUFWeaV4eUOMur2f7SN2g49viya2lpGOiJOInwNInpYMYRIhWLYOjLG4nWLFZKN2+n5fPfoLS1fcljCdKQjF06g56IZZoAsNjtVLTuWfOumLBY8DVsw1e3KdM0i7/rBtNDfWvQndrYrKmwAcq276aq/RiazbGmL3nVSInF4aRm/0OUNbdlWleFlAbOihq2vfC7lLfsRrNaMy9ZEGkYxKYmCfTcYujcB3T/5ud0/OS7XP3+t7j6/W/PHtd++J/p/MUPGDjzFhM3LhGZGEVPJDJvtzBC4KtvYvsLv0Np274lilsSGR3A392ZaZjFVVFDydYdazbtJaU0WwZt7VmnII1UCv+NC8T9o/lvfW1w1vzXahYLtYcepqhx28ZuCgmNkuZd1B56JD8j0mmkYeAsrWLrs1+mvGV31kw4F2kYhIb66D/1Jjd++ndc+fv/QOdP/gsD7/4c//VzBLuuEey6OnsEbl1m9Nw7dP38H7jyvX9Px7/8V+689QoTN6+Qii1cq2biKqtk2zNfonjbzqxN7LmkYlFGL55GZmkl2D1eSre2YXV516RAF0Lgrm6gdEtLpmmW0GAPgb7uZXUzCoV1+cWu0grqjj6B1elek5ecD+zFZdQfexK7tyjTtGKkNLD7ymh87EXKW/cuSdSR8RF63n6Vmz/5Ll2/+GezfxgJLsElMm2XkmD3dfrefoWbP/lbbv/y+/i7bjDHDykr7opqNj/xOYo2bV/0PUkjRajvNoGBnkzTLMVbWilq2r6kgmK5WOxOyncdwup0ZZog/ewDdzpNZ48lPPdCY91+cUXbXir3n0AssRm6ngiLler9JyjZnH3KZNlIicXuoubgw9S0H0Gz5G7iGqkkI1fOcfPlv6P37VcI9XUCMp0pcwl6PkJoCE0jERhn6KO36Hz57+h5+1WS0UjmpfMo3rSNpsc/h7OsKue4iBAaidAU41fOZppmcZWW42vYsibOSraiEipa92SeniU6Oc5E5xWknso0PRCsm7AtNjuNJ57GU7cl03RvEQLf5lbqjjy65L7vUpBS4mvaTt3RxxYdKNPjMXrff52uV/+RqdvXkKnkEvu6i5AWeGR0gL53f8GNf/mvRCZGF62Ny1t2UnXgJBZH7jl8I5kg1N9FdHI80zRLeds+3FX1ea21hWahYs+RnAOc04O9hHpu5uc53oesm7ABXCVlbHr4OSyO9XU5zIqU2LwlbHrkeZzFpZnWlZMeAa8/8fSi901MB+l89Z/pf/dVEoHJNYnJLjQNIx5l4to5On7wLaZ6bucUt9AsNBx9HN+m5pytBSEE00M9THRczDTNUlTXiLeuKa8CszgcVO7cn7WJnQiHGL1yDiO1xAHEAmThJ7NWCEFp8w5qjjyRabknCKuV2iOPUbzJdMLPF8JqpWLnAcq3Z59fJZ0Bu177F8YunkKPR/Iu6LtI3zvYd4vbr/6jOaiUA5vHS9MTn8PuK8s0fYoQ6NEIgZ6bJMKhTCukC4my1nZsnqKchclyKG3djzuHD0B0fITA7asP3Ej4XNb9l1sdTmr2H8dTt3nNpkKWgtRTFG/ZSc3+44s2lZeLu7Ke+uOfMWvfLOiJBH0fvMHY5TMYyUTOmjGfCKER6r9Nz29eztmEBvDVb6Zi79GcBY7QNAI9nQT7ujJNs5Rta8NdVZfzPktFWG1UtLVnbfUZqSSjV86Rit2LpaMbh3UXNoCnqo7645/B5l14Xe9aMzNaXXv4YVylFZnmVSEsVirbj+EsyV7TScNg9PLHjJx9Bz0ezUuGXw5CszB58zJ9H7xGKpZ9YYRmtVLTfgxHSY5nJATxqXGmujqyzp3b3B7Kdx40fRlWg5QUNTbja9yStdCMB6eYuHbunuSrjcQ9EbYQgoqdB6jYeQiy9JPWDolmtVO17yHKW/ZmGleNvaiEyp37cjYDQwM99L//KxIhf87r1hKBZPTCh4xe/SRny8ldUUVZ676cQtE0S9oxZiTTNEtFW7o5vgqkoVPR1o7Dt/C4hZSS8RuXSU4HMk0PHPcmVwE2p4u6o4/hqdmU1xHTxZCGxFu7idojj2Kx2zPNq0MISlvbcRRnr62TkTCDZ98jPNKf1wGlZSMEejTMwIevE/NPZFpnsdgdVLTtQcu1xloIYmNDTHXdyOrW6iwppXz34awDXoshpYG7pglf0/as90hGwoxe+OCBWsWVjYWf0DpRVLeJuuNPYvP6ctYIeUNK7MVl1J14Gk9FdaZ11QhNo6JtLxZb9gIjNNjD+KXTWZuS64oQREcHGL74EUaO+V5XRQ3exm0557VBMnblYxJZakuhWajadQAtx7PJiSHNiDI19ZmWWSZvXSO2hOm8B4F7KmyAqt0H8TW1rEs/U1gsVOw8RNWuA5mm1SMlrqpG3BU1mZZZUvEYw+dPZ108cS+Qhs7oxVMkQgsLkvRqreJNWyFXy0oIpge6CQ32ZfVyc1fWUNLSnnNufEHSBXLx5tashaY0DMavnH3gVnFl454L2+pw0vT4izjL81+DZuKqrKP+2ONolvw5oswgkRQ1bMHq8mSaZon5x5m6fSXz9D0nEZhk/MblrDWdxWbDW92w6OCXNHRGzp9Kj/LPx+pwUdHWjtCW9/ylNCiq30JxDs/AqZ5bhIf7FmlVPDjcc2EDFNU2Unf8qTVxPZzB4nDR8MjzuNegCQ5mJeSpqsXqWDjzS8Ng6s5t9Oh0pumeYyQTTFw7j56jb+ooq8K1mAeZlEzdusz0yECmBdJdleJN2/DWb8laiMxDSixON8VbWnF4fZlWSD/biesXiE2N37PByI3GhngKQtOoaT9Kxc6DS3/hy0BKg8q9R6lc4kKMFSElzqLirANiUhoEem4i9RzCuEdIaRCbGMo5iGb3FJmj0Yu8HyOVYOTimazNcUdxGeU79mHkGImfi5QSV1kV5W3tmaZZwuMjBHtvIbO0FB5E1iiXLx+b20P9Q0/iqqpfNPMsCykp2rSd+mNPpOOXrQFSYi+txJ5lGgbASCYJD93ZkE1FAaQScUJD/ZmmWawuN3ZPkdk0yYFMpQjcuko0S/hpzWKhuGk77sr6JT0LzWqjaNP2nIOd/s4rTA/1ICwbJjvfc9bvSUjJ9Mhg1ukQ0p5OdUcfR1jti2agJSElFpeHusOP4anOPpoqDYN4MLDi75RIrC5PzhHfeHAKPRbNb6GVL4TZHI/5FxYjgNXuwOpyLSn5scAkY9cuZJ6exVu7iZJtO8BY5GZSYvMUUbnncNYBsVhwiqnuGxjxaLqIUrCewpbSYOTSx2nXw4VfqNA0ynfsp7Rlz5Iy0GJIoHLXISp27s85veTvvom/51bW5uOiSNLCXrh/TXqOdSk11L1BYCTiREcHMw2zCE3D6nBmfXezCIEei+C/eYFklh1BrA4HxZtbsRWV5C7oNA1P3WZKGrOvCAwP9RHs6czaBXpQWTdhAyTDQXrfeZXE9MILBkivAKs78hiuippVCUEaBu7qBqr2P5Qz3nTUP0HPb35GKrKaQS2JzWUG9s9GLOg3o41kL1/uKVLXScUWewZLS7wQgsjIEBM3LmeaZinZ0oK3blPOd6xZrFTtPZp1UDUZizJx45LpaZaj4H4QWVdhSykJ9d1m6JMPc9aOZc07qdr3kLmjRI7rsiIlFqeLmgMnc4bOkYbBwKk3CQ/3ZpqWz2L5aiW/435FCBLTU0x1dWT1AnMWl+JrasFizx7b3FleTVnzjqytrdjkGJOdV7LaH2TWVdgAqWiY4Y/fIdBzK9M0i9A0ag+epHjLjpX5kmsapdv3UnvwZKblLiY7rzJ+9WzWedd8snDW3UjIrAJbEVIS7L1FMMfy0IqdB3CWVixcyAtB1b4TWQc8jVSKyVvXiE8Mq9p6AVagmtUhNI3Y5AgDZ94iHgpmmmdxFpfScPIZbCsIhucoqaDx4WexubM7i0SnJhn86G1i/rE8lPgCPR7HSGV3y7R7vGs31ZYHhMWK1b26RRpzmYncMtV1Pevct7e6Fm/jtgUj19h95ZQ178jqTJQMBxn55H0l6izcg5xmBtybvHaOkYuns750gJLNzVQfeiRrH2shNKuNhpPP4mtoyjTNYqRSjF44hb/zstmCXm3mEJAMh3K6ito9Raawl1dGrRPmjhqO0spMw13oy23ZSAN/1w0zHNMCCKFRtfcIVvfdhbeUkvId+7NuqCClxN9zi9hk9tVkDzr3QNjpkdNEnOGP3yXYfyfTOotmsVJ/7AmKGs2tQRdHULxtF1V7DuX0QJrqvsHQR2+bTfDVihoQCIxUImsoXgCnr2TN9+ZaMRI0mwNXLj/3RJxUbHlRXoRmIdhzg2Df7UzTLCVNzXiqN83pckksDjdlzTvTo/DzMZIJRj75IGel8KCTPfevMULTiI4NMHTufZKRhadFSAui8eFnTR/sXE1yKbGXlNP48LNpR4qFiQenGPjoHeJT4/lrGgtBdGyQRMifaZnF4nDirKhb2ZjBOmCx2fHkELYei5GMRJa92Z7UdSY7r2YNnaTZ7FTsOTw7XSV1g5JtO/Hm2N1jqvc24cE7ufPDA869zWVCMH75DOM3Li08gIJ5TenWVmqPPYnI0t8CibDZqTvyOL6GzZnGWaRhMHb1E/wdnyyr5lkS0iAxHcz6O4RmoXhL24adb7UXFeOprs08PUsiHCIenFr2cxOaxmTHRSKjQ5kmwJwaK9vWNhulRdhslG5ryxoEUhoGo5c+IrWEUMoPMvdW2IAej9L/3q+YHl544QDpxf61+x/Ct7l1wTjRUkLp9r1Utx/NuqwPIDTYy8CpN9aoCSeIjI+iJ+KZBkhn8LJtbTm90+4Vms1OaUt7zq5CIjhJdGJoRQONRiLK2PWLWfvoDl8pVftPIA0DT3Ujvhxdr+mRAUJ3bmDoC0+jKUzuubABIqP99H/wGql49sEnV3kltYcfxV5cfletKA0DV3kNdUcfyxlnLBGZpuetV4jlCN+zGoQQhAZ7csYQc1dWU7x1Z+bpe47V5aVy94GsopVSEh4ZIBlauSPIZMcnxAMLd1U0q5Wyra3YPD6KN7fkDKYwduUcsZkwzYqsbAhhIyWTHRcYu3Y+03IX5a17qNh1cM6uGhLN7qBiz2FKt+beSG/43IdM3boKOTydVoUQhAe6iU9lXyFltTupPXQSzb7wtjT3AqFplO08iKss+4h4IhQk2H9nVWMScf844x2Xs7aW3BU11D70NKXNuxac/gKIBaYI9t7CSMRZ3CPowWblbyrPpCIhhs78hsh49hrV6nBSf/QJPLVNSGkgpcRb10TdoUdybqETHLjDyPkPMJLxFdc4S0GPR5nsupF9PlsIfPVbKGvLHRxw/ZA4SquoO3QiZxcmHpggcOcGQlv5s5OGzsgn72Zt0VhdbuoPncTXmD3G++TNS0wP3lG19RLYMMJGCEL93fR/8BpGMnv/yVNdR/2JZ7B7S3D4ymh4+DlcZdnD46ZiUQZPv0VkdGBNRT3DxNV0eJ4s2L1F1B44jr2kImvttT5IhMVG3bEn8FRlb/oaqSSTt66TCgdXWUtKEsFJJrs6Mg2Qbjk4fCXYPd5ME6Q3sA/cuUkqHFqX93i/s3GEDWDojF/7hNGr5zItd1G5o52K3Yep2n+SytbsIYSllIxc/piJjguwxIX9qyU6PsTk7Y6cNXLJ1h3UH/+MuVFBjuvWFKFRsfsIVbsPZW36AsRDQfP5rRpBKhZl7OLprP7juQgN3CFw5yasotXwILGxhC0EieAkQx+/QzjHEkKL3UHT45+l8eFnEDma4KHBXoY+fmddV/8YqSQjFz4kmaXJCWawgZoDJ6jaf9JM/zqLWxoGRY3NNJ58CoevJNM8izQMJjoumXPGeUAaOtNDPebeYcvASCWZ6r5BbGI4p+OR4lM23FMSmoVAdwcjFz/KOj0C4Cgqxp7DFzwZDTP08buEB7pXNeizbKRBqKeT0UsfZVruwu4povHhZynffTTH/Hz+kVLirm6k6YnPUVSX3e0WIDY1wfC5d3NuKLAchNCIByaZuJ57kDST6OQ4EzcubVgfgI3IOub4pSOAkU/eY6r75opqMykl/tsdjF0+w/o7Zwv0eJThs+8yPZK91QHgLq9k61MvUb77yLplWndVPdue/wplzbk3DDRSKfref43ISF+maVXIZJJg322mszisZCINg0BPJ5Gh3nVrdRUCG1LYCEE8MEHfu78kFpjMtC5KzD9O7zuvokfDqxzwWSHp7WUHPnydVBaHlRlcZZVse+aL1Bx5PKeDyGoRFivFW3fS9qVvUrZ916IaGe+4xPjVczn931eC0DQiI/34O5cWhjkRDjF66eO1m6YsUDamsNPNtmBvJ4PnPlzWYIueTND7wetEhu9tCS8NnfHr5xm99HFWN9MZnCVlbHnyJba+8Hu4KmpBaDkjiywZKUEIrC4PdSeeoe1L38TXkH1DuxlCwwP0f/BrkiF//p+hEOixKIE7nek4c9mRUhLqv0OorzP/6ShwNqywwdzqdvjMm0zdyR6UIZOJG5cZv5R7Oeh6IIRGcjrAwKk38XfdyDTPw+ZyU3foJG1f/jMq24/h8JWZAjeM5XVHpEQaOlJKbN5iylr30frlP2PLEy9m9b+eSyzgp+/dXxLqu71mYhKaxtTtqwR7c79XI5Vk9Oq5ZRXsCpMNLWyAZCRE/6k3sq4OmktsapK+935JKrxY7K71QQhBZOgOd974CcGBxcMvCU3DV7+Jts9/nZYvfJOaQ4/i27Qdq7cYKSWGnkLquilcQ0caxqf/1lMYqRSaw4W3YStV7cfY9uLX2PHbf0xFy+6cDigzpKIR+t79JWOXTq9t01cIUtFppnpu5XQjjo6P4u84v7yCTQH3g7AxDAK3rzFw5u2ctbCRSjH40TtERvpBbKCMIAShnpv0vPnTJQ8YaVYb5S27aPmtr9H6pW+y7YWvsunRF6g5+Ailbfso3raLoqZWPHVNFG/bRcn2PVTuPUbDyWfY+sxv0/rFP6btS9+kes8hrM6lua/q8Rh9H7zOyIUP12XOXwiNyRsXiYwNZ5rSSEYufZR1UY0iNxtf2EKgxyOMfPI+/u7sTdqJm5cZOf8+ejx2bwbMciEEkx3n6frFPxPIEQMsEyEEnsoaatqPsvWZL7H9xa/R8lt/8Onx0jdm/739c79P82d/l/pjj1NUU581pNBCxEMBut98mYFTr5sDjmvUBL+L9Bp2f/fCLriRiXH8Ny8uuJpPsTgbX9iYc9vxyTEzRtkCK4Qik2MMffwu8cDk+s5ZLwch8N+8xK1X/5Hxm0sbEc7E6nTiKi3HU1lDUW0DxY1b8FTW4C6vwu4tWnRQbCGik2Pc+sX3GTrzm/UTdRqhaYxeOEVygW7WxM3LxPzjqhm+QjaoChZC4r95mYmOi3eNGOvJJCPnT+G/dXk98+TKEILpvtvcfuUf6D/9Vs7+5VojDYPJ2x10/Og7jF/+CCOVnzBRy8WstW/e9U4TkTCTHReWHYpJ8Sn3j7CFwIhHGTzzFsH+ntnTwd7bDH38Nuj6xmuCZyE2OcKd135E56v/TGi4P+fYwVoQDwXoP/0WN3/6twR7bqYHyu7Ns5OGztjVc+iJT70Mp7puEBkZuAfORYXD/SNsTHFHRvoYPPMWycg08VCAgdO/IRlcg/nWNUaPRxn95D06fvQdBj56h+jkeOYleScxHWT0yjluvvz33Hnth8QnF44euq5ISfBOx+yGgEYqxdTta8SDfuUXvgruyyc3fvUswxc/YujcB0xcP3ffiXoWKYkM3eH2z/+emz/7ewZO/4bgQM+Cg0mrITI5zvCF09z65Q+48ePvMHltfTZJWCp6LGrGCAdCgz0EZlsRipWSX2ELgZbF51lolryVwEYiRt+7v2Dgw9fyN7iiaVnTp2mWNSw8zDjr/hvnufXzf+TmT79rDmZ98iGh4YGcC2GyIQ2DqH+C0aufcPvXP6Lz5b+j82ffY/ST9zESsTX8LSvD0JMEujuYHhlkqquDyMjAxh0EvU8Qco6/Y7DnFue/9dd3X7FUpMRRWom3ph7NYkNm9o+kJDTUR3wqTyOdM/fIQyYVQsNd07hgwAaBwNCTTA8PEPeP5eX7cjHT37Z5fThLKrAX+XCUVOCqqMXuK8Fic+AsLkWz281deXSdeDiIkUgQmxonEZwiOtpPIhwi5h8nEfAjDd0UyhqnfeWYscRLdxwgEZgkcPvKui2Kudfs//N/PRs1JtDbRcePv0N0bCBrJZOL/X/6l/iazECQ+RN22rcXQ8+UNMwMzeSoFe810jCy+mebabesaDppxUhppkeCsFqxOFxoVhtC07DY7OmML02PtFQKaejoyQRGMmHWypiF3kZ93vMR6UUw8oFyIV0rYS//0zkQQiAsVrQFDmGxriix64XQtHlpvjvt6yhq0qLULLOBGPRomGRoikRgksj4EOHRfsKjA0TGBon7x0gEJtEj08hUwvxcHrs+64PESCUeKFGvJffTm3+wEWL2EMJs+cwcc233atpKsbFQwlYoChAlbIWiAFHCVigKECVshaIAUcJWKAoQJWyFogBRwlYoChAl7LUg7TU2G5NMLjMgoUKxSvIr7JkImdmOLC6ba4e8O+DfvCOP6ZHp75ISe0klntotlLS0U9p2AE/9Vhxl1eZly406qlCsgLz5ikspKWneTe3Bk1idzvlr5KVkvPMqI2ffWZc4VlIauMprqDv2GTwV1fNiewshCI0MMHjqTRKBiVUtkLCkI4OWbGnFW12HzVuCZrNjcTgRwtwZxEgmSYaDhEeHmLpzk1BvZ85dORUPBmvlK54/YRsG1YcfZ/vzXzGFvQD9H79H96v/sC5rgaVh4G3YSusX/oii2oZMMwBTfd3c/PF3iIz0r2iZoMXhxLe5lbojj1NUtwmry4PFlns3DyOVIhWLEB4ZZPDjd5i6dUUJ/AFmrYS9/E/nQkoMY+HaWEoD8tn0XQrprkE2pK6vqFksNAueus00v/QNdn75Tyhv3YPDV7KoqAE0qxW710fptjbavvANWr70J/iaWtd1Yz5F4ZNfYRc6UiI0C2U7D9L6hT+ievchrE73ild+WewOKlr30PrFP6Rq3wk0m31FBY1CkYkS9lKREmGxUr7rENue/RJFtQ0rar5nIoTAXV7F1qe/kBa3Q4lbsWpWnzMfEITVRvmuQ2x9+gu4SudHWlktdm8RW578LaoOnESzO5g/+qhQLB0l7CUgDR1PTSNNj7+Iq6wy05w37F4fTY8+T/GWNqS+zuMRioJCCXsxpMReVErd8SfxVtdlWuchpcRIJoj6JwgN9RMa6ic8OkwqFl3SvLmzpIy6Y5/BVVl7D+b9FYWCEvZiCA1v/WYqd+7PtMwjFYsyfv0iV7//bS5++3/nynf/LVe++2+59F/+Dy5999/Rd+o3xAP+RfvQZc07KN7c+sAE9FPkHyXsnEgsThc1hx7F6lh4bn6G8OgQN1/5R278+D8z2fEJ8akJEsGp9OEn1NtJz2s/5PoP/zP+rhs5p+E0i5Wq/Q9h95WqWluxIpSwcyJwlVVRtq0103AX4bFhbv/yB4xd+BA9FjFr5LlxyNLTYUYqyVTXVW7+9G+Z6LyWeZu7KN3cjLemcUWOCgqFyjU5EBYL5bsOYbE7Mk2zJMIhet/9JZM3LixpJFsIjejYEL1vv0I4y37Zhq4TC/ixl1YirIs7vSgUmShh50AIjaL6zdlrTWluIDd+9eyyYoMKi4VQ7y3GrpzF0HWS0QjBwT6GL35M9xsvc+PH3+HmT77LZMeFdfGrVxQeWXKsgnSscXdZRdYFIslYmInOKyvaV1pKg5HzH3Ll7/4dV77377nxo2/T9Yt/ovednzN87n38Ny+R8I8tOtCmUCyEEnYOLE4PFrs98/QsqWiEYE8nQlueqEm3BmKTI0zevEygu4PwUC/JkB8MHc1qNTcKWGZhoVDMoISdA1dVPcKSvY9rJBPE/aOrCtIvNC29c8dG3ltLcb+hhJ0Dqeu5B8TSWxopFBsNJewcxCdHcg5eWWx2nGU1qh+s2HAoYecgGQmRiqd3rlwAq9tLyda2edFZFIp7jRJ2LqQkPDaSVbhWh5OKHe04SitVra3YUChh50AaBv6ujpzun0UNW6jefwJhs+fujysU64gSdg6koePv+IRkZDrTNIvV7qDhxJM0nHwOW1GpWXOr2ltxj1HCXoTkdIjRK5/kFKvd7WXz4y+w/aVvUNK8C6vHh9TzHN5YoVgGStiLoCdijJx9l9Bwf6bpLjSrjcq2vez86l+w9bnfoXLPYdzVDaBpGHpKrdJSrCtK2EsgMjpA3/uvkQhnb5LPYHO5qT1wnLYv/xnbf+sP2PyZz1O17wTO8trZzQty1f4KRT5Qwl4CUk8xce0s/afezDn9NReLzUbplhaaHnuB7S/+Hq1f+EOaX/waVftPYvOVKXEr1hQl7KWQ3s1j8MPXGDj1G1KxaOYVObF7vJRuaaHhoSdpfv532Pk7f86mJz6Ps6I281KFIi8oYS8RITRSsQh97/ycW7/6EbGpycxLloTdW0TJ5u1sevQ5dn31L6h96Bls3uLMyxSKVaGEvQyEEOiJKKOfvMv1H32HiRuXSUYjmZctCYvNhremnuZnvsCOr/wZvs2taFabaqIr8oIS9rIRSF0n2H2d6z/4G7p+/WMmO6+SXGbzfAbNaqN0axs7v/JnVB96FIvLo0bQFatGCXsV6LEIQ2feoOOH36brVz9k+MJpwqNDGHp2T7VsOHwlbH3q89Qdewqry6vErVgVStirRGgWktMBhk6/QefPvsfNn36XW6/8A4Nn32d6ZHBZIrc6XTSefGpW3KpZrlgpStj5IL0u24hFCHRfZ/DMm3T/6gd0/PBbXP/Bt+g79Ruik+NL8kSzudxsevhpKnYdVoEMFStGCTufCJGOhmIhFQkxPdDN+OWP6HnjX7j8d/83Xa//lPDoUDqAQ3asThebHn0Ob/2WTJNCsSSUsNeKtMgRAj0aJjo6yMAHv+LK9/49faffIhEOZX7iLtzlldQefRyL051pUigWJb/C3oAhuzZELzW9aYDUU8QmR7nzq+/T+fN/IuqfyLxyDoKKlj24q+o35oNVbGjyKmxpGDmUJNCs6xkfTCIsFiy5+qnSQGZP8JohDZ3xy2e48+bLxEOBTPMsVoeTsrb9CEteX5PiASB/OUZAIhTASCYyLZCuc9zlVdmD7+cbKbG7PTh8JZmWWRLhEHoijrgX0UGlwdjlM4xd/STryLmwWCjZ3Lx+z0xRMOQtxwiEKexUMtNkIgTu8ipsRdmFlk+ExYajtBKbK3sfNT41gb5Cz7HVI5DJBKMXz5AMBzONsziLy7B5fJmnFYqc5E3YCEF8ctjclC4LVqebsrZ9ax8/W0rsRcWUbNuVabmLuH8MPR5Z+/RkQwjCQ3dI5hhI02w2HGVVmacVipzkT9jpAPrhseGs87WazUZF214stuyb3OUDCbjKqyjdsj3TNEtiOkQ8MHnPnUCkniIeDGRNh0DFLlcsn7wKG8DffRM9Sz8bwFu7icr9J7JG/swHdm8xdSeexeb2ZppmiU6OEZ0ch5X2X6XMy5i7sFhx+Iqzthokck2flaIwWWGuzk6g61rOpqUZYeQh3FX1izpqrJSK3Ycpb96Refoupod6iI4PLX3fLSmRho7UUxh6CovLg7Bm39drSUiJu6oBa44CCMMgGVzZElHFg0vehZ0ITjLecSlrcxygqH4zmz/zEo7SipyhfZeLNAxKmnez6ZHncu5pHQ9O4b91DSMRzz1HLCVSTyENA5uvFN+WHVS2H2fTI8+z9bmvUHvo0cxPLA9No3znfmzuokzLLMnINHH/WOZphSIneRe21HVGPnmfeNCfaZpFCEHFjn1sfuqLOEoq8rKSSRoGpS172frsb+MsKcs0f4qEqTs38d++uuj8sKOsioZHPkvLS1+n9fN/SMtv/QHbP/f7bHv+d6g79DANJ5+mqLE5a/84F9IwKNq0nYod+7HYFp5rl1IyPTq0ovsrHmxy5+wVEh0fYuTS2ZwZUrNaqW4/wuanvoTDl0OIS0BYrFTsOcq2575CUW1jpvku4tMBRi99lJ7mylFbAxaHi4YTT1J39HHKW/fgra7D7vm02ewsKWfzU5/HU7c552+dh5S4KutofPhZvFXZwyNJPcVEx8WcrR+FYiHWRNhGIs7I+feY6u3KNN2FZrFS3X6Yti//GSXNe9Bmms+LiUSaQfmF0LD7ymh87EW2f/areGvqM6+8CyOVYuTSx0zdumJuW7sIcf8YkfHRzNOzCCEo27aDLU9/CU/9VnMALGva02nWNDz1m9n2wlepaN2bddAMIB4MEOy+npcWjeLBYvHcvRKEIDo6xMCpNxZd7KBZrJRubWXnV/6Erc//Lr6m7dh9pWg2B1Ka4XpnD10HIbC4PDjLq6ncf5K2L/8pTY8+l9PDbIapnlsMfvh6Vu+4TPREnKGP30VPxDNNd1G+fSc7vvzH1B55AkdZJZrVfle6ASwON67KWupPPs/O3/kLylt25yxcpGEwfOF0zoFIhSIbQs6ZSwn23OL8t/767itWipRoDhcNJ55h06PPZ+1H3oWUpBJxQoN9THXfIDzYTSoaxkilEJqGZrXiKKnA29hM6dZW3KUVS94wPjw2zM2X/57gnes5atX5WF1eWr7wR1Tu3Jdpmoc0DIIDvUzcuMh03y1S8RiapmEvLsPbsI2K1r24ytJpXoRgfw/Xv/+fiE2MLOn3Ke5P9v/5v8bXuBWAQG8XHT/+DtGxgRW5Ee//07/E19QMaypsQEoDR3EFmx57kdqDJ1a0CERPxElGo2gWDZvbYy6FXCaxqUlu//pHTFz5eEWj8EWbttP6hT/CU1mdacqKlJLEdAiLzYbV6co05yQRnubWz/+JsctnQDXDC5q1EvbyP70MhNCIT43T+/YrDJ77IOtih1xY7A6cxSXYvb4Vi7r7zZeZuHo25yb22ZFMD3TT/+HrJKNLD1gohMBR5Fu2qPVkgoEzbzHZcR5WUAgpFKy1sAGEphEPjNP31s/oP/Um+hJ30sgH0yMD3PrlDxi7eAqZSq6wSSswUknGLnxA3/u/XnG44aWgJxIMfvQOg6deJxW7hz7sivueNRc26Zo7EZyk752f0/X6T80AA8vo5y4XQ08xees6N3/6XSaunV2FqE2EEKTiUQY++DV3fvMK8eBU5iWrJhWL0H/6N/S+9TOS08El9cMVimysX+4RglQkxNCZN7n2z/+J8RuX8157S8Mg5h+n973X6PjB3xDqvQ2GsSpRzyCEhpGIMfTRm3T85LsE++9kX6K6DAw9RXhsiM5f/IC+t35GKjKtRK1YNeucgwTS0Jnu7+LGj77NzZ//E/6uG0vaxTIXRipFdHKM4QunufaDb9P71k/Ta5zz3CoQAplKMdV5iav/+P/S98EbRMaHVzR2IA2DqH+cwY/f5crf/0fGzr+PnojlpRBSKNZ0VHwpWN1FlLbspaRpG+7qBpylFdhcnkWnx5KxKIngFDH/OKGBO0x2XmF6oHuFA2QrQwgNd20TlbsOUFS/GXdlLTavD0uW0X9D10mEQ0THh5ke7GH8+gVCfbfWbDGMYuOzVqPi91zYpGsvhMBVUYunuh6HrwSb24vF4cJeXJZumpo7XiZDU6TiURLTQSITo0RHB0mGppY8n513pMQwdBzF5RQ1bMVZUo7DV4y9pMLciwuB1JMkAhPEg1PEAn5CA93EJkbMUMX3Is2KDUNBC3sGKQ0wpBlgUEqE1YbNUzzb5zQScVKREFIapiCEMB/ARhCHlObG9lIiNGGmOx1IUeo6yXAAqacQQrt3hZBiw7FWwl7+p9cQITSExYJmsaJZbQggNT1FMjhJMjiJHgubdqsNYbHOxu3eEAiRTpuZrlQkNJvuVDiAECKd7g2UZkXBsqGEvSDpmnn2uF+4X9OtKAg2vrAVCsWyUcJWKAoQJWyFogBRwlYoChAlbIWiAFHCVigKECVshaIAUcJWKAoQJWyFogBRwlYoChAlbIWiAFHCVigKECVshaIAyb+w09vv5AxLJKW59jpXQMP0+uaFrpGGjqGnskcembl/Zhpm0pZ5zLEb6W1yF9yTeqnpXuyaBTB3PVne52a29J23t9cCv2vefTPPzf69wLm5x0LMPu/55xc8sl2TeS6TzPtkXpN5LvPvuecyjwIj78LWHG6sHh+aLfs2thaXB2dZDVaPL9MEgJQSi7sIV2UtFpd33ssq2dJGdftxyubtfWUWBlZvMc6yanP/6jmftTjdWL3F8w6haSAlNq+P6vZjVLcfw1lSNk/cVo8vne6iuwWQRho6FrcXZ3kNmt255AwjDXNjBVdVPZrdubBIMtCsNip2H6K6/TjeuqZPP5PeAsniLkqv/dawuLxYvcWQXrwvNAsWt3luJla75nDOe2/znpfHh7DMCfskJVJKbEUlOEoqzfunf7MQGhaXZ96ztriLZgNnCE3D4i4yzzvd5jmLFavHZ6YtHajCvNYy+ztmDs3xacx2817e2TwlNAtWT5G5j/nM91ls89Jj3sc5e59CwfJXf/VXfzXzRzwwyfC59+6+YplUH3iYqv0PYeg6sYnhDKvAVVlP4yPPU7X/IYo3bSMRDpEITn0qFKFR1rybhpPPUNl+DG9NA1H/OKmIGfBQSknbl/6Yxkeew7dpG4MfvTWbmSx2F2Vt+6h/6Cmq9h7F5vERmxzDiMcQFiu1R5+gev8JSlt2U7o9fWzbxfRAN8nINCVNLez+g39F5Z7DhPrvMD3Uk452ouHb3ELjI89TuecIvk3NJCNhEkH/bLo1q43Sbbuoe+gpqvc9hKO4jMjECEY8uuh67Kq9x2h4+Fmq9hzBVlRMbHIMPZb7czZPEfv/5H+iqv0Y0tCZuH4eoZlBKOofeobKPYcxUilS0TB1x56kcvdhgj03MBJxrC4PVftPUnf4UeKBCVLRMDVHnqByzxFSsVg6bJNGzcFHqTl4ktKWPZRt34NvUzMx/xiJ0BQivRtp1b6HqDv6BOU7DyCB2OQohp7C5i2m5vDj5vPevovS7bspa9mDp3YTkbERUtFp7CUVNJx4msrdh7F6fIT6OilqbKbh5LOUtbaTjERIBCaQho6jtJLaY5+hqv2Yeb/mXVidHqYH74CU2IvLqX/oacrb2gn13cZWVEzDI5/FU91AdHwEPRGjaNN2Nj3yPKUte+56/1isRMcGl1wQ55PaQ4/gKC4FIB7wM379PKlIaEUhs2oPPowjvYV03mvski2t1O4/hqd2U6YJzWan/viTNBx/goqWXdQePEHDyeeweYrM0t8wcJZX0fjoC9QePEF58w4ajj1O/fHP3JXJZ5qedzXFpcRds4nNT36B2n3HKNvWxubHPktp8y6koZs7Y7bsoXb/MWr3zTkOHMfqcpvfP6cWnq0BpcTu9VH/0NPUHniI8uYd1B08QdNjn50NuCgNA3dtE5uf+iL1hx+hvHkHmx5+hopdhxapfSXe+q1sfvoLVO06QElTM02PvkDJth2LRz6VZnBE0oXdDMJiobytnbpDJ6nYsR+ru4iKHXupO3Aci80+e62vvonqvYfxNbVgcTip2nOYyt0HsftKAIkASre2Ubv/OLX7jlGz7yg1+4/hLC4ztx3SLBQ372Lb81+huv0IlTva2frMl3CWVYMEi9NFeVs7Ne1HZp91TftRqvccwub1mS0kdxGVuw6a924/AoZBUW0j9Ycfpnb/MdxVdeZ7lxKbx0flzv2f3m//cUq2ts3+bqu7iKpdB6g7eBLflp3YvcXUtB+lvG0fFpfZGnBV1lJ74KF579/X1IzQli+kjUzehS2lgaHr8/t9gMVmo7xlN4npEEPnTzM9PEB5yy7snqLZOGeu0ko8VXVMjw7R/9E76Ik4xQ1bMm81DyklvqZmnMUljN+6xvDFj7A6nfg2NWNxejAMnaGz79Hz3q8Jjw1jpJKMXD7L7dd+SmI6mLWElFJidXvxNWwhFpik7/RbRCZGKW7cirOiLn2Rga9xK57qWiZuXWfg7PtY7A5zr+5ctYAEb/0W7G4v08MD9Lz9KhabDV9js9ncz/XZHMwUeM7yKhyllRgpfbYQEEKQjISI+8fMa8qqsDhcuErKSEwHiI4PM7Nv+Ey/PzjQQ9ebr9D9m58TGR82m/d2O+U79mOx2Rk8+x6Tt67iKinDU9eEsFhIhUMMnnmLvlNvEQv4kYZO7wdv0PPer0lMTQACidl9AbC5vRRt3oGr0nym88cpzII/FYvSf/ptbr/+MqOXPsqwmwV4yZbt5pk5u50iJdP9Xdx+7SeMXTsPwFTPbbrfepWJa+cXzK/3M3kXdk6EwOpyY6SSBAd7iU2NY7HZ033c9CWaGfcsHpwiNNCLoetLDKAvsbu95mcDfiaunyce8JMIT5t9NcNg4urHDJ15i6h/HCNlNl/733s1vVXtwsImXSA5i0tIhMNMjwxiJBNoVht2XykIgZRgc7rQrDaS4WlC/XeIToyRjITnjxFkMBOBNRULEx7qTZ8UiBzpWSqu8mo81fXzNvaTemp2e16714ezrAqr04URj88r5KSUhEcGGHj3VYZPv0HMP47QBEKzYPcWI6VBeKiP8FAv4ZFBpGHuW56KRRi/dJrhc++RmA4iDYOh028wcvYdkukYcHPR7E5Kmnfhqsix8aGAVCzGyLl3GXjvF/hvXsy8AoTAW9Ngji/MQUpJdLSf/ndfxX/zEgChwV4GT79BsOuqEvZqEeJTDeXI75DOgKl4lNQi+1ObCOKhANIwKNvSQmxihLP/4d/Q/+7P0WNhU4B6CiOVQBrmF0s9hZGImwnJoaNPM6EEQycxHSQW9M/uBCKE+d2peIyyba1ERgf45D/9L/S+9TJGMp6zr5yMRpBSx1NVT82RxzB0nfBgD6lIKOfnloKzqBhXWcX8cT4hSMWipOIxnCVluKsaQAiS4SAJ/+i875V6ilQsgp6MpQsJgdT12YK5ZNtOBj9+j/N/878xee0js5aUEiOVxEglzOcrwUgmkMn03xlYbDaK6ppw+Mz+ZjakNNATMfR4JGsMeUdxGd6G5nmDn9IwMJLx2fcmDR2ZTMybXTFbKnP2ZV+zY4GZmzyx7sJezu+IjA3S/cbL9H/4xoKZYS5CCPy3rhKbmsBZVknDI88hDfmpcGeuu+tT8/JwToQQxP1j3P7lD+n48X9leqDbvLcmCPbeJjo+YvbHjz8BaOgZ3z0PIZge6CIVCWNzeyjfvotgXxeB3tvLS1gWhMWCu6LGHEOY8+AFgmQ0QioWw+4txlNdjzSkWTBmpFcAzuIyylr24Cgun/09eiLO5PXz6Ik4ZS27KW/di5FMYCTnbHskZv9j/jmnUM9EaBreqlps7pkWzsIXWux2Sra0UrptZ9aWnNXpxte4Jcuzz5EIzNrGVVaFr6kF36bta3w0Y7GvzYj8wk9mA2CxO/BW1WHEo7Mj4jkRguhoPyPnTyENg/KWPVS2H1tOObIEBEYyTnigi9CdDvSomS4hNMJDPYxcOIWeiFPR2k7V/hOz00u5iE+OEBrqg3TtPXz+Q0J9t9I148pTb+gp9GQCb3UdzpLSuzO5gEQ4RDIaxllcgruiGmnoJELB+Xle0yhr2c2er//3lLXsxZjtsxqE+rsYvXwWi9VK3fHP4NvctuICKRWL4a6owmKzkYrH5iUDzMdh9xTR8tLX2fnVv0hvyDAfzWqlqG7TitJiGDq1hx9j9+//K3b+7n+75kfOrscqWDzn3QukxOH1seWpz9P2239M0xOfW/JLGvnkfabu3MTmclN78CSemk1r0H+aLzihaYxePMXk7etY7HZqD57AXbMpS63xKcKSjjWebvIKq52aQ49Qe/wprC7Pop9fECFIRszxAJunCKvDdXdNLASpaNjcqhfwVtchDYNoYGKBvr3ZpI4F/OiJ+KfWdNN98KO3mR4ZwF1WSc3Bh7HO1rhLR+o60alJAOLTQRLTubshyUh4wdYFgJSS2NQkjqJibOnR8GUhJTa3G7vHi7O4ZM0Pba5fQB7ZmMJGoCcTRKf8WOwObMvYPD4ZDtH71iskI9N4azdRum1HHoUtEVY77pomPI3Ns04VM6Qi0/S//xqxwCTuihoqdrTn/m4pKdm+m+L0ThA2TxF1hx6m6YmXaDjxDDaP764puKUi0jV2ZGKMZGR6nkhmuhTJoB/AHDjTU8QD5t9zkYbEf7uDGz/+DoHujlmHFtItlenBbobOvksqEaeibS+Okop537cYUhokpgOQFm0yGs68xERAYjrE7V/+gM6ffQ+Zmt/HNlJJpu50omkamtW67EIG87Xc96y/sJfyztNNxdErZ0nFopnWBRFWOxV7j1P/yAukEgnGrl9Cs1hwFJdmbbItFykljtJKtj73ZXZ88Q/x1puCtDiclO8+QsNjnyMemGTs+kU0q9UcuMrxeyWS0i1tWOwOxm9eIR4K4K2px1NRRWI6iJFKLfGBzUcIjXjQT3RyPNNkFpwZXRw9HiMy3LegKONBP1Nd14gHJ2ftFoeT+odfoHLvcQJ3bhHs7cLqdOGpacza982GoeuERwchXTAnc3S99GSSYG8nge6OBX0EZCrJ1O1rC9qWgtA0An1dDF/8mKHzp9fvuPgRY9fPkwwFFmg1LZ/lvYHlMLOXVYb/s5TmCKnQ0ntY5WDRwacZpESzWqnZd5TNj7+Au7qB6WGz32r3lZtuhku5TxbMNJvTOBabA2dJGa6ySrPAkBLN7qJq7xG2PPFZire0ERkzPe7sRWXYSyqzf7cEV3kFmtVKaGiAkQtnZvckCw/3kYpFV/yKhRBEx4c/nULLQAhBfLbwACMZJxUJZl4Gaa86m8eH1eU1a2wpsdidND38DI0nn0ZYrcQmRwCw+8qWNLYwF6mniI0PAZAKB0lOL5wOAKEJrC4PtgXdlgVSGsT9Y8QCUxm2pSE0C+OXznDr5b/l9ivfW7/j5e8ydOp19HhkwcJ1uSzvDSwFadYWztIKije34Nu0bbbfJQ2DeCiIZrNTurkFT1UdqVjUnG5I/xYpJdKQuEorKGveicX+qbdUVoQgFQmhJ+JY7Q7KW/eagyeAkYiaU06rQE/EifjHcfiKKdncjNXhQk/EiaenhlLRMHosimaxUr5jHyWbWwDM/bumA9lflICofxIpoWTTFmwe76zJW9uI1elaQUM8jRCkotNExoZM55TMNAhBIjyNnkwAEBkfXbAAEkLg27SN5s99nc1PfxlXZZ05HSQNkrEorrJKavY/hKuiFtJuyZnz5oshDZ24fxxpmE3ymUHJeUiwuT00Pv45tr34++YA5TwEqViEQH93pmHJGKkkejy67oeRfhf5IO/CFhYLFrudhqOPsv/P/pL2b/6PFG9pRRo6RirJ+PULWF1uKnfsxVVazviNyyTCIbP5IQTxwCTRiRFcpeVU7z4AQkPLcDaYGWyau0gABFPdN0lGI1TvPkDt/uOk4jECvbfMjDKbsQXazOZ5c2sWaWbiGWZsQgiS4RBT3Z3YPUXUtB/BWVLGROc1YmnvLSMeJdjbSSoWpWrnPqr3HDS/u+cWMpX9ZQkE4x0XiE6MUbqlhdr9xwn0dRMa7MXm8WGx282ELYQwa1KYcXKZY5rZ1FCzEBkfJhmZNt1f7xK3IBEKzM7hxqeD875KaBaEpuEur6Km/TA1+46afs1SYiQSTN68gsXmoP7Io5RubSUyOUZ4oPuucQUhZtJjNRM99/5CoFnNtEo9RXTKTzI8/en7nfu7hEBYrFhsdipbTdfgki2taaOctWtWG6lohFDvLfNjC+xVPnPfQt4gMe+LQACi40ME7twk2NPJ1O3rBHtukgxPgzQIjwyQikWIBfxMdl5h6MxbxKfMfqBI137x4CR6MsnEjYuMXz9PsK+L6YEe8xrzQiJjw0zdvkaorxuQCCGI+cdJBKdIRiOEx4YYPvc+49c+MZ0ihDA/LMymX3i4j0DPDZLTaYd7Yd7XSMQJ9HQydfuaadM0jESC6MQwqViUmH+CiRuXGDz1Bsmw2WQUQhAL+IkHJkhGw0TGRxk9/yEjFz7M6kQB5vclgn5iUxPEA5ME7tyk5+1XmLxxiVQ0wvTAHYx4LEvmM/fdDvZ3M3X7GtGJUYQwe2dSGkwP9hDsvUV0YoRkJMR0/x0C3R0Y6fQIQE8mSEVChPq7mey8TCz9HswLBCCJjH36Lv1d1wn2dJKMhs1R9PFh0z01FCTUf4eBD98g1N81W2PPvCsjGSc00M1U940MZxCBkYgR7Osy7xsJEey9TSI0RTwwif/2dRJBf7o4EBiJKOGhXqa6bxC4c4Oprg4iY2bf3Hx3MUL9XUx1XSc1bToMTXVdJzzYc5ejkBACPRbFf+sq0YmRZbcwNipzF4HkfX9sqevzBi6ExfJp7SjNcV6r0206NKSS82ocqetoDhcylTD7gIK7pgXkzHppIe6eLkg3960eH0LTTO+t9HVzLkqnUd6drpluwEzGz7QZhrl00OlCj0XSf8+t8U1fZYu7yKw1IiEwjCyivBtp6Oa0l6bNNsc0mx0Ms8mbjVnPN027a7TafD4gLBoCYc49p8ch7qo1pUz7kMt59yDru7TOtmxMm8DqLkLqKfRYZN67RMolfD9oFguGoaefufkeZ1oMmfeZYWbb5Uy7ZrXNvkshTPfXue/BHPsxXZUzf/P9zMbY+F7OuHFmyfjzBLkMZn7SSj+fi8XStarvlnOex9x/b3BW9ZsV+WJjbHwvRO6Mu5pMItZwT+rF7ruq7577uZXe4x6wqt+sWAvunbAVCsWaoYStUBQgStgKRQGihK1QFCBK2ApFAaKErVAUIErYCkUBooStUBQgStgKRQFyl0tpoKeTT/6///W+cnpSKBSmB/KBv/g3FDeZMdXvEnYyHMJ/6+r95c6oUCgASWnzLnNXnUxhKxSKwkD1sRWKAkQJW6EoQP5/1dlZqzKtZFkAAAAASUVORK5CYII=" alt="MOVUS Logistics &amp; Investment">
   </div>
-  <div class="actions">
-    <span id="syncBadge" style="display:none;font-size:12px;color:#c7d2fe;align-self:center;padding:0 4px;"></span>
-    <button class="btn btn-ghost" id="btnThemeToggle" title="Karanlık/Aydınlık mod" aria-label="Karanlık/Aydınlık mod">🌙</button>
-    <button class="btn btn-ghost" id="btnLangToggle" title="Dil / Language" aria-label="Dil değiştir">🌐 <span id="langToggleLabel">TR</span></button>
-    <button class="btn btn-ghost" id="btnNotif" style="position:relative;" aria-label="Bildirimler"><span data-i18n="btnNotif">🔔 Bildirimler</span><span id="notifBadge" class="people-badge" style="display:none;"></span></button>
-    <button class="btn btn-ghost" id="btnPeople" style="display:none;position:relative;"><span data-i18n="btnPeople">👥 Çalışanlar</span><span id="peopleBadge" class="people-badge" style="display:none;"></span></button>
-    <button class="btn btn-ghost" id="btnAssignTask" style="display:none;"><span data-i18n="btnAssignTask">🎯 Görev Ata</span></button>
-    <button class="btn btn-ghost" id="btnOverview" style="display:none;"><span data-i18n="btnOverview">📈 Genel Bakış</span></button>
-    <button class="btn btn-ghost" id="btnMailSettings" style="display:none;"><span data-i18n="btnMailSettings">✉️ Mail Ayarları</span></button>
-    <button class="btn btn-ghost" id="btnSignOut" style="display:none;"><span data-i18n="btnSignOut">Çıkış Yap</span></button>
-    <button class="btn btn-excel" id="btnExportExcel"><span data-i18n="btnExportExcel">📊 EXCELE AKTAR</span></button>
-    <button class="btn btn-ghost" id="btnExport"><span data-i18n="btnExport">⬇ Yedek Al</span></button>
-    <button class="btn btn-ghost" id="btnImport"><span data-i18n="btnImport">⬆ Yedek Yükle</span></button>
-    <input type="file" id="fileImport" accept=".json" style="display:none">
-    <button class="btn btn-ghost" id="btnTrash" style="position:relative;"><span data-i18n="btnTrash">🗑️ Çöp Kutusu</span><span id="trashBadge" class="people-badge" style="display:none;"></span></button>
-    <button class="btn btn-primary" id="btnNewTask"><span data-i18n="btnNewTask">+ Yeni Görev</span></button>
+  <div class="topbar-controls">
+    <span id="syncBadge" class="sync-badge" style="display:none;"></span>
+    <nav class="menu-tabs" id="menuTabs">
+      <div class="menu-tab" data-menu="veri">
+        <button type="button" class="menu-tab-trigger" aria-haspopup="true" aria-expanded="false">📁 <span data-i18n="menuData">Veri</span> <span class="menu-caret">▾</span><span id="trashBadge" class="people-badge" style="display:none;"></span></button>
+        <div class="menu-tab-panel">
+          <button class="btn" id="btnExportExcel"><span data-i18n="btnExportExcel">📊 EXCELE AKTAR</span></button>
+          <button class="btn" id="btnExport"><span data-i18n="btnExport">⬇ Yedek Al</span></button>
+          <button class="btn" id="btnImport"><span data-i18n="btnImport">⬆ Yedek Yükle</span></button>
+          <input type="file" id="fileImport" accept=".json" style="display:none">
+          <button class="btn" id="btnTrash"><span data-i18n="btnTrash">🗑️ Çöp Kutusu</span></button>
+        </div>
+      </div>
+      <div class="menu-tab" data-menu="kullanicilar">
+        <button type="button" class="menu-tab-trigger" aria-haspopup="true" aria-expanded="false">👤 <span data-i18n="menuUsers">Kullanıcılar</span> <span class="menu-caret">▾</span><span id="peopleBadge" class="people-badge" style="display:none;"></span></button>
+        <div class="menu-tab-panel">
+          <button class="btn" id="btnPeople" style="display:none;position:relative;"><span data-i18n="btnPeople">👥 Çalışanlar</span></button>
+          <button class="btn" id="btnSignOut" style="display:none;"><span data-i18n="btnSignOut">Çıkış Yap</span></button>
+        </div>
+      </div>
+      <div class="menu-tab" data-menu="ayarlar">
+        <button type="button" class="menu-tab-trigger" aria-haspopup="true" aria-expanded="false">⚙️ <span data-i18n="menuSettings">Ayarlar</span> <span class="menu-caret">▾</span></button>
+        <div class="menu-tab-panel">
+          <button class="btn" id="btnMailSettings" style="display:none;"><span data-i18n="btnMailSettings">✉️ Mail Ayarları</span></button>
+          <button class="btn" id="btnThemeToggle" title="Karanlık/Aydınlık mod" aria-label="Karanlık/Aydınlık mod">🌙 <span data-i18n="menuThemeToggle">Gece Modu</span></button>
+          <button class="btn" id="btnLangToggle" title="Dil / Language" aria-label="Dil değiştir">🌐 <span data-i18n="menuLang">Dil</span>: <span id="langToggleLabel">TR</span></button>
+        </div>
+      </div>
+      <div class="menu-tab" data-menu="bildirimler">
+        <button type="button" class="menu-tab-trigger" aria-haspopup="true" aria-expanded="false">🔔 <span data-i18n="menuNotifications">Bildirimler</span> <span class="menu-caret">▾</span><span id="notifBadge" class="people-badge" style="display:none;"></span></button>
+        <div class="menu-tab-panel">
+          <button class="btn" id="btnNotif" style="position:relative;" aria-label="Bildirimler"><span data-i18n="btnNotif">🔔 Bildirimler</span></button>
+          <button class="btn" id="btnOverview" style="display:none;"><span data-i18n="btnOverview">📈 Genel Bakış</span></button>
+        </div>
+      </div>
+    </nav>
+    <div class="topbar-primary-actions">
+      <button class="btn btn-primary" id="btnAssignTask" style="display:none;"><span data-i18n="btnAssignTask">🎯 Görev Ata</span></button>
+      <button class="btn btn-primary" id="btnNewTask"><span data-i18n="btnNewTask">+ Yeni Görev</span></button>
+    </div>
   </div>
 </header>
 
 <main>
-  <div class="section-heading"><span class="sh-icon">📅</span><span class="sh-text" data-i18n="sectionCalendar">Takvim</span></div>
-  <div class="gantt-section">
-    <div class="gantt-toolbar">
-      <div class="gantt-mode-group">
-        <label class="gantt-mode-label" for="ganttViewMode">Takvim gösterim şekli</label>
-        <select id="ganttViewMode">
-          <option value="week">Haftalık</option>
-          <option value="month" selected>Aylık</option>
-          <option value="year">Yıllık</option>
-        </select>
-        <input type="date" id="ganttWeekPicker" title="Gösterilecek haftayı seç" style="display:none">
-        <select id="ganttMonthPicker" title="Ay seç" style="display:none"></select>
-        <select id="ganttMonthYearPicker" title="Yıl seç" style="display:none"></select>
-        <select id="ganttYearPicker" title="Yıl seç" style="display:none"></select>
-      </div>
-      <button class="icon-btn" id="ganttPrev" title="Geri" aria-label="Geri">‹</button>
-      <div class="gantt-title" id="ganttTitle"></div>
-      <button class="icon-btn" id="ganttNext" title="İleri" aria-label="İleri">›</button>
-      <button class="link-btn" id="ganttTodayBtn">Bugün</button>
-      <div class="gantt-legend">
-        <span><i class="legend-dot legend-ok"></i>Zamanında</span>
-        <span><i class="legend-dot legend-behind"></i>Risk</span>
-        <span><i class="legend-dot legend-critical"></i>Kritik</span>
-      </div>
+  <div class="section-collapsible" data-section="taskStatus">
+    <div class="section-heading" data-toggle="taskStatus"><span class="sh-icon">📊</span><span class="sh-text" data-i18n="sectionTaskStatus">Görev Durumu</span><span class="sh-chevron">▾</span></div>
+    <div class="section-body" id="sectionBody_taskStatus">
+      <div class="dash" id="dash"></div>
+      <div class="summary-row" id="summaryRow"></div>
     </div>
-    <div class="gantt-body">
-      <div class="gantt-sidebar" id="ganttSidebar"></div>
-      <div class="gantt-timeline-scroll" id="ganttScroll">
-        <div class="gantt-timeline" id="ganttTimeline">
-          <div class="gantt-header" id="ganttHeaderMonths"></div>
-          <div class="gantt-header gantt-header-days" id="ganttHeaderDays"></div>
-          <div class="gantt-rows" id="ganttRows"></div>
+  </div>
+
+  <div class="section-collapsible" data-section="calendar">
+    <div class="section-heading" data-toggle="calendar"><span class="sh-icon">📅</span><span class="sh-text" data-i18n="sectionCalendar">Takvim</span><span class="sh-chevron">▾</span></div>
+    <div class="section-body" id="sectionBody_calendar">
+      <div class="gantt-section">
+        <div class="gantt-toolbar">
+          <div class="gantt-mode-group">
+            <label class="gantt-mode-label" for="ganttViewMode">Takvim gösterim şekli</label>
+            <select id="ganttViewMode">
+              <option value="week">Haftalık</option>
+              <option value="month" selected>Aylık</option>
+              <option value="year">Yıllık</option>
+            </select>
+            <input type="date" id="ganttWeekPicker" title="Gösterilecek haftayı seç" style="display:none">
+            <select id="ganttMonthPicker" title="Ay seç" style="display:none"></select>
+            <select id="ganttMonthYearPicker" title="Yıl seç" style="display:none"></select>
+            <select id="ganttYearPicker" title="Yıl seç" style="display:none"></select>
+          </div>
+          <button class="icon-btn" id="ganttPrev" title="Geri" aria-label="Geri">‹</button>
+          <div class="gantt-title" id="ganttTitle"></div>
+          <button class="icon-btn" id="ganttNext" title="İleri" aria-label="İleri">›</button>
+          <button class="link-btn" id="ganttTodayBtn">Bugün</button>
+          <div class="gantt-legend">
+            <span><i class="legend-dot legend-ok"></i>Zamanında</span>
+            <span><i class="legend-dot legend-behind"></i>Risk</span>
+            <span><i class="legend-dot legend-critical"></i>Kritik</span>
+          </div>
         </div>
+        <div class="gantt-body">
+          <div class="gantt-sidebar" id="ganttSidebar"></div>
+          <div class="gantt-timeline-scroll" id="ganttScroll">
+            <div class="gantt-timeline" id="ganttTimeline">
+              <div class="gantt-header" id="ganttHeaderMonths"></div>
+              <div class="gantt-header gantt-header-days" id="ganttHeaderDays"></div>
+              <div class="gantt-rows" id="ganttRows"></div>
+            </div>
+          </div>
+        </div>
+        <div class="hint" id="ganttEmptyHint" style="display:none;padding:8px 2px 0;">Tarihi olmayan görevler burada gösterilmez. Bir görevin Gantt'ta görünmesi için en az Termin Tarihi girin.</div>
       </div>
     </div>
-    <div class="hint" id="ganttEmptyHint" style="display:none;padding:8px 2px 0;">Tarihi olmayan görevler burada gösterilmez. Bir görevin Gantt'ta görünmesi için en az Termin Tarihi girin.</div>
   </div>
 
-  <div class="section-heading"><span class="sh-icon">📊</span><span class="sh-text" data-i18n="sectionTaskStatus">Görev Durumu</span></div>
-  <div class="dash" id="dash"></div>
-
-  <div class="summary-row" id="summaryRow"></div>
-
-  <div class="section-heading"><span class="sh-icon">📝</span><span class="sh-text" data-i18n="sectionMyTasks">Görevlerim</span></div>
-  <div class="toolbar">
-    <input type="text" id="searchInput" placeholder="Görevlerde ara..." data-i18n-placeholder="searchPlaceholder">
-    <select id="filterCategory"><option value="">Tüm Kategoriler</option></select>
-    <select id="filterPriority">
-      <option value="">Tüm Öncelikler</option>
-      <option value="4">Acil</option>
-      <option value="3">Yüksek</option>
-      <option value="2">Orta</option>
-      <option value="1">Düşük</option>
-    </select>
-    <select id="filterStatus">
-      <option value="">Tüm Durumlar</option>
-      <option value="late">Gecikmiş</option>
-      <option value="soon">Yaklaşan</option>
-      <option value="progress">Devam Ediyor</option>
-      <option value="done">Tamamlandı</option>
-    </select>
-    <label class="checkbox-label" id="showCompletedLabel"><input type="checkbox" id="showCompletedToggle"> Tamamlananları göster</label>
-    <div class="spacer"></div>
-    <button class="link-btn" id="btnClearFilters" data-i18n="btnClearFilters">Filtreleri Temizle</button>
-  </div>
-
-  <div id="catList"></div>
-
-  <div id="assignedSection" class="assigned-section" style="display:none;">
-    <div class="section-heading"><span class="sh-icon">🌐</span><span class="sh-text" data-i18n="sectionAssignedTasks">Online Görevler</span></div>
-    <div class="assigned-cols">
-      <div class="assigned-col">
-        <h3 data-i18n="colAssignedToMe">Bana Atananlar</h3>
-        <div id="assignedToMeList"></div>
+  <div class="section-collapsible" data-section="myTasks">
+    <div class="section-heading" data-toggle="myTasks"><span class="sh-icon">📝</span><span class="sh-text" data-i18n="sectionMyTasks">Görevlerim</span><span class="sh-chevron">▾</span></div>
+    <div class="section-body" id="sectionBody_myTasks">
+      <div class="toolbar">
+        <input type="text" id="searchInput" placeholder="Görevlerde ara..." data-i18n-placeholder="searchPlaceholder">
+        <select id="filterCategory"><option value="">Tüm Kategoriler</option></select>
+        <select id="filterPriority">
+          <option value="">Tüm Öncelikler</option>
+          <option value="4">Acil</option>
+          <option value="3">Yüksek</option>
+          <option value="2">Orta</option>
+          <option value="1">Düşük</option>
+        </select>
+        <select id="filterStatus">
+          <option value="">Tüm Durumlar</option>
+          <option value="late">Gecikmiş</option>
+          <option value="soon">Yaklaşan</option>
+          <option value="progress">Devam Ediyor</option>
+          <option value="done">Tamamlandı</option>
+        </select>
+        <label class="checkbox-label" id="showCompletedLabel"><input type="checkbox" id="showCompletedToggle"> Tamamlananları göster</label>
+        <div class="spacer"></div>
+        <button class="link-btn" id="btnClearFilters" data-i18n="btnClearFilters">Filtreleri Temizle</button>
       </div>
-      <div class="assigned-col">
-        <h3 data-i18n="colAssignedByMe">Atadıklarım</h3>
-        <div id="assignedByMeList"></div>
+
+      <div id="catList"></div>
+    </div>
+  </div>
+
+  <div id="assignedSection" class="assigned-section section-collapsible" style="display:none;" data-section="assigned">
+    <div class="section-heading" data-toggle="assigned"><span class="sh-icon">🌐</span><span class="sh-text" data-i18n="sectionAssignedTasks">Online Görevler</span><span class="sh-chevron">▾</span></div>
+    <div class="section-body" id="sectionBody_assigned">
+      <div class="assigned-cols">
+        <div class="assigned-col">
+          <h3 data-i18n="colAssignedToMe">Bana Atananlar</h3>
+          <div id="assignedToMeList"></div>
+        </div>
+        <div class="assigned-col">
+          <h3 data-i18n="colAssignedByMe">Atadıklarım</h3>
+          <div id="assignedByMeList"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -506,6 +576,12 @@ const translations = {
     btnTrash: '🗑️ Çöp Kutusu',
     btnNewTask: '+ Yeni Görev',
     btnClearFilters: 'Filtreleri Temizle',
+    menuData: 'Veri',
+    menuUsers: 'Kullanıcılar',
+    menuSettings: 'Ayarlar',
+    menuNotifications: 'Bildirimler',
+    menuThemeToggle: 'Gece Modu',
+    menuLang: 'Dil',
     sectionCalendar: 'Takvim',
     sectionTaskStatus: 'Görev Durumu',
     sectionMyTasks: 'Görevlerim',
@@ -536,6 +612,12 @@ const translations = {
     btnTrash: '🗑️ Trash',
     btnNewTask: '+ New Task',
     btnClearFilters: 'Clear Filters',
+    menuData: 'Data',
+    menuUsers: 'Users',
+    menuSettings: 'Settings',
+    menuNotifications: 'Notifications',
+    menuThemeToggle: 'Dark Mode',
+    menuLang: 'Language',
     sectionCalendar: 'Calendar',
     sectionTaskStatus: 'Task Status',
     sectionMyTasks: 'My Tasks',
@@ -583,6 +665,91 @@ function toggleLang(){
 }
 translateStaticUI();
 
+// ---------------- Açılır/kapanır bölümler (Görev Durumu/Takvim/Görevlerim/Online Görevler) ----------------
+// Varsayılan olarak tümü açık gösterilir; kullanıcı bir bölüm başlığına tıklayınca o bölüm
+// kapanır/açılır. Tercih localStorage'da kalıcı olur, sayfa yeniden açıldığında korunur.
+const SECTION_COLLAPSE_KEY = 'gorevTakipCollapsedSections_v1';
+function getCollapsedSectionsMap(){
+  try{
+    const raw = localStorage.getItem(SECTION_COLLAPSE_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return (parsed && typeof parsed === 'object') ? parsed : {};
+  }catch(e){ return {}; }
+}
+function setSectionCollapsed(key, collapsed){
+  const map = getCollapsedSectionsMap();
+  if(collapsed) map[key] = true; else delete map[key];
+  localStorage.setItem(SECTION_COLLAPSE_KEY, JSON.stringify(map));
+}
+function applySectionCollapseState(){
+  if(typeof document === 'undefined' || !document.querySelectorAll) return;
+  const map = getCollapsedSectionsMap();
+  document.querySelectorAll('.section-heading[data-toggle]').forEach(h=>{
+    const key = h.getAttribute('data-toggle');
+    const body = document.getElementById('sectionBody_' + key);
+    if(!body) return;
+    const collapsed = !!map[key];
+    body.style.display = collapsed ? 'none' : '';
+    h.classList.toggle('collapsed', collapsed);
+  });
+}
+function initSectionCollapseToggles(){
+  if(typeof document === 'undefined' || !document.querySelectorAll) return;
+  document.querySelectorAll('.section-heading[data-toggle]').forEach(h=>{
+    h.addEventListener('click', ()=>{
+      const key = h.getAttribute('data-toggle');
+      const body = document.getElementById('sectionBody_' + key);
+      if(!body) return;
+      const nowCollapsed = body.style.display !== 'none';
+      body.style.display = nowCollapsed ? 'none' : '';
+      h.classList.toggle('collapsed', nowCollapsed);
+      setSectionCollapsed(key, nowCollapsed);
+    });
+  });
+  applySectionCollapseState();
+}
+initSectionCollapseToggles();
+
+// ---------------- Üst bar menü sekmeleri (Veri/Kullanıcılar/Ayarlar/Bildirimler) ----------------
+// Fare ile üstüne gelince (CSS :hover) ve tıklanınca (aşağıdaki JS, dokunmatik/klavye için)
+// açılır. Bir sekme açıkken dışarı tıklamak veya Esc'e basmak kapatır. Panel içindeki bir
+// düğmeye tıklandığında (gerçek işlem tetiklendiğinde) menü otomatik kapanır.
+function closeAllMenuTabs(){
+  if(typeof document === 'undefined' || !document.querySelectorAll) return;
+  document.querySelectorAll('.menu-tab.open').forEach(m=>{
+    m.classList.remove('open');
+    const trigger = m.querySelector('.menu-tab-trigger');
+    if(trigger) trigger.setAttribute('aria-expanded', 'false');
+  });
+}
+function initMenuTabs(){
+  if(typeof document === 'undefined' || !document.querySelectorAll) return;
+  document.querySelectorAll('.menu-tab').forEach(menu=>{
+    const trigger = menu.querySelector('.menu-tab-trigger');
+    if(!trigger) return;
+    trigger.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const willOpen = !menu.classList.contains('open');
+      closeAllMenuTabs();
+      if(willOpen){
+        menu.classList.add('open');
+        trigger.setAttribute('aria-expanded', 'true');
+      }
+    });
+    const panel = menu.querySelector('.menu-tab-panel');
+    if(panel){
+      panel.querySelectorAll('button').forEach(btn=>{
+        btn.addEventListener('click', ()=>{ closeAllMenuTabs(); });
+      });
+    }
+  });
+  if(typeof document.addEventListener === 'function'){
+    document.addEventListener('click', closeAllMenuTabs);
+    document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeAllMenuTabs(); });
+  }
+}
+initMenuTabs();
+
 /* ---------------- Veri Modeli ----------------
 Category: {id, name, color}
 Task: {id, categoryId, parentId, title, description, statusTag, startDate, dueDate, completionDate,
@@ -601,7 +768,7 @@ varsa işaretli oranı, (3) o da yoksa manualProgress alanından ELLE girilen de
 // tam değişiklik geçmişi repo kökündeki CHANGELOG.md dosyasında (Keep a Changelog biçiminde)
 // tutulur. Sürüm numarası sayfanın üst kısmında küçük bir etiket olarak gösterilir ki hangi
 // sürümün canlıda olduğu bir bakışta anlaşılsın (örn. destek/hata bildirimi sırasında faydalı).
-const APP_VERSION = '1.9.5';
+const APP_VERSION = '1.10.0';
 if(typeof document !== 'undefined' && document.getElementById){
   const versionTagEl = document.getElementById('appVersionTag');
   if(versionTagEl) versionTagEl.textContent = 'v' + APP_VERSION;
@@ -689,7 +856,13 @@ let _childrenIndex = null;
 // otomatik olarak yeniden kuruluyor. Elle invalidateChildrenIndex() çağrıları ise sadece
 // YERİNDE (push gibi, referans değişmeyen) mutasyonlar için hâlâ gerekli.
 let _childrenIndexTasksRef = null;
-function invalidateChildrenIndex(){ _childrenIndex = null; _childrenIndexTasksRef = null; }
+// Ek güvence: yalnızca referans karşılaştırması, state.tasks.push(...) gibi YERİNDE (referans
+// değişmeyen) eklemeleri yakalayamaz — bu durumda açık bir invalidateChildrenIndex() çağrısı
+// unutulursa (örn. test kurulum kodu veya ileride yazılacak yeni bir fonksiyon) önbellek sessizce
+// bayat kalabilirdi. Dizinin uzunluğunu da saklayıp karşılaştırarak bu boşluğu kapatıyoruz: görev
+// sayısı değiştiyse (ekleme/silme) referans aynı kalsa bile önbellek otomatik yeniden kurulur.
+let _childrenIndexTasksLen = -1;
+function invalidateChildrenIndex(){ _childrenIndex = null; _childrenIndexTasksRef = null; _childrenIndexTasksLen = -1; }
 function buildChildrenIndex(){
   const idx = new Map();
   for(const t of state.tasks){
@@ -700,9 +873,10 @@ function buildChildrenIndex(){
   return idx;
 }
 function getChildren(taskId){
-  if(_childrenIndex === null || _childrenIndexTasksRef !== state.tasks){
+  if(_childrenIndex === null || _childrenIndexTasksRef !== state.tasks || _childrenIndexTasksLen !== state.tasks.length){
     _childrenIndex = buildChildrenIndex();
     _childrenIndexTasksRef = state.tasks;
+    _childrenIndexTasksLen = state.tasks.length;
   }
   return _childrenIndex.get(taskId) || [];
 }
