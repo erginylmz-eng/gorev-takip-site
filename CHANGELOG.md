@@ -4,6 +4,15 @@ Bu dosya, Görev Takip Merkezi uygulamasındaki önemli değişiklikleri sürüm
 
 **Not:** Sürümleme bu belgeyle birlikte (madde 8.3 kapsamında) geriye dönük olarak eklendi. Bu yüzden eski sürümlerin tam tarihleri yoktur — sürümler geliştirme sırasına göre gruplanmıştır. Bu andan itibaren yeni her sürüm gerçek tarihiyle eklenecektir. Uygulamanın o an hangi sürümde olduğu, sayfanın üst kısmındaki başlığın yanında küçük bir `vX.Y.Z` etiketiyle gösterilir.
 
+## v1.12.0 — 2026-08-11
+
+### Değişen
+- **Header kimliği sadeleştirildi**: başlıktaki 📋 emoji kaldırıldı, sağ üstteki ikinci logo kaldırıldı — artık tek bir MOVUS logosu, başlığın hemen soluna taşındı.
+- **Panel başlığı artık düzenlenebiliyor**: "Satış Geliştirme Yöneticisi Paneli" yazısının yanındaki ✏️ butonuna basılınca sadece unvan/rol metni girilebiliyor (ör. "Depo Sorumlusu"); kaydedilince sonuna otomatik " Paneli" eklenerek gösteriliyor. Tercih tarayıcıda kalıcı olarak saklanıyor.
+
+### Eklenen
+- Panel başlığının hemen altında, giriş yapan kullanıcının **Ad Soyad**'ı (Google girişindeki adı) gösteriliyor.
+
 ## v1.11.0 — 2026-08-11
 
 ### Eklenen
