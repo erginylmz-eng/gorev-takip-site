@@ -4,6 +4,12 @@ Bu dosya, Görev Takip Merkezi uygulamasındaki önemli değişiklikleri sürüm
 
 **Not:** Sürümleme bu belgeyle birlikte (madde 8.3 kapsamında) geriye dönük olarak eklendi. Bu yüzden eski sürümlerin tam tarihleri yoktur — sürümler geliştirme sırasına göre gruplanmıştır. Bu andan itibaren yeni her sürüm gerçek tarihiyle eklenecektir. Uygulamanın o an hangi sürümde olduğu, sayfanın üst kısmındaki başlığın yanında küçük bir `vX.Y.Z` etiketiyle gösterilir.
 
+## v1.11.0 — 2026-08-11
+
+### Eklenen
+- **Kategori yönetimi**: artık kategori adı ve rengi düzenlenebiliyor, yeni kategori eklenebiliyor, mevcut bir kategori silinebiliyor. Her kategori başlığında ✏️ (düzenle) ve 🗑️ (sil) ikonları, "Görevlerim" bölümünün altında da "+ Yeni Kategori Ekle" bağlantısı var.
+- Bir kategori silindiğinde, içindeki tüm görevler (kalıcı olarak yok edilmez) çöp kutusuna taşınır — gerekirse "Çöp Kutusu"ndan geri alınabilir. Son kalan kategori silinemez (en az bir kategori zorunlu).
+
 ## v1.10.0 — 2026-08-11
 
 ### Eklenen
