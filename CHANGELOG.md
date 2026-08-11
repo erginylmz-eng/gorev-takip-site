@@ -4,6 +4,43 @@ Bu dosya, Görev Takip Merkezi uygulamasındaki önemli değişiklikleri sürüm
 
 **Not:** Sürümleme bu belgeyle birlikte (madde 8.3 kapsamında) geriye dönük olarak eklendi. Bu yüzden eski sürümlerin tam tarihleri yoktur — sürümler geliştirme sırasına göre gruplanmıştır. Bu andan itibaren yeni her sürüm gerçek tarihiyle eklenecektir. Uygulamanın o an hangi sürümde olduğu, sayfanın üst kısmındaki başlığın yanında küçük bir `vX.Y.Z` etiketiyle gösterilir.
 
+## v1.10.0 — 2026-08-11
+
+### Eklenen
+- **MOVUS logosu** üst menüye eklendi (başlığın sağına, üst satırda).
+- Üst bardaki **"Görev Ata"** butonu artık her zaman "Yeni Görev" butonunun hemen yanında, aynı görsel (birincil) stille görünüyor.
+- **Bölümler artık açılıp kapanabiliyor**: Görev Durumu, Takvim, Görevlerim ve Online Görevler bölüm başlıklarına tıklayınca o bölüm gizlenip tekrar açılabiliyor. Tercih tarayıcıda kalıcı olarak saklanıyor (sayfa yenilense de korunuyor). Varsayılan: hepsi açık.
+
+### Değişen
+- **Görev Durumu artık Takvim'in üstünde**: sıralama Görev Durumu → Takvim → Görevlerim → Online Görevler olarak değişti.
+- **Üst bar sadeleştirildi**: eskiden tek tek dizilen 8+ buton (Excele Aktar, Yedek Al, Yedek Yükle, Çöp Kutusu, Çalışanlar, Genel Bakış, Mail Ayarları, Çıkış Yap, gece modu, dil) artık 4 kompakt açılır menü altında toplandı — **Veri** (Excele Aktar / Yedek Al / Yedek Yükle / Çöp Kutusu), **Kullanıcılar** (Çalışanlar / Çıkış Yap), **Ayarlar** (Mail Ayarları / Gece Modu / Dil) ve **Bildirimler** (Bildirimler / Genel Bakış). Menüler hem üstüne gelince hem de tıklanınca açılıyor; dışarı tıklayınca veya Esc'e basınca kapanıyor. Sadece "Görev Ata" ve "+ Yeni Görev" dışarıda, her zaman görünür kaldı.
+
+### Düzeltilen
+- **Gece modunda takvim (Gantt) çizgileri artık uyumlu**: satır/sütun ayraç çizgileri ve "bugün" vurgusu eskiden sabit açık renklere sabitlenmişti, karanlık modda göz yoran bir uyumsuzluk yaratıyordu; artık tema değişkenleriyle otomatik uyum sağlıyor.
+- **`getChildren()` önbelleğinde ek bir bayat veri riski kapatıldı**: bir önceki sürümde eklenen referans-karşılaştırmalı önbellek geçersiz kılma mekanizması, görev dizisine YERİNDE (push ile, referans değişmeden) ekleme yapılan ama açık bir `invalidateChildrenIndex()` çağrısı unutulan nadir bir senaryoda bayat veri döndürebiliyordu. Artık dizi uzunluğu da karşılaştırılıyor, bu senaryo da otomatik yakalanıyor.
+
+## v1.9.5 — 2026-08-10
+
+### Eklenen
+- **Aktif/Tamamlanan görev ayrımı**: her kategori altında artık aktif ve tamamlanan görevler ayrı gösteriliyor. Aktif görevler her zaman görünür; tamamlanan kök görevler (ve onlarla birlikte tüm alt görev ağaçları) varsayılan olarak gizli — üst araç çubuğundaki "Tamamlananları göster" kutusu işaretlenince bir alt bölümde beliriyorler. Kategori başlığındaki sayaç da "X aktif · Y tamamlanan" şeklinde güncellendi.
+
+## v1.9.4 — 2026-08-09
+
+### Değişen
+- **Performans denetiminde tespit edilen `getChildren()` sorunu çözüldü**: bu fonksiyon her çağrıldığında (görev listesi, Gantt, arama, Excel dışa aktarma, tamamlanma oranı hesaplaması gibi bir görevin alt görevlerine ihtiyaç duyan HER yerde) tüm görev dizisini baştan sona tarıyordu; büyük/derin ağaçlarda bu O(n²) davranışa yol açıyordu. Artık üst-görev → alt-görevler eşlemesi tek seferde kurulup önbelleğe alınıyor, tekrar tekrar taranmıyor. Aynı iyileştirme atanan/paylaşılan görevlerin `getSharedChildren()` fonksiyonuna da uygulandı.
+- Bu değişiklik sırasında, önbelleğin bazı durumlarda (görev verisi doğrudan yeni bir diziyle değiştirildiğinde) bayat kalabileceği bir risk tespit edilip düzeltildi; önbellek artık hem elle hem de otomatik (referans karşılaştırmalı) olarak geçersiz kılınıyor. Bunu koruyan yeni bir test dosyası (`children_index_test.js`) eklendi.
+
+## v1.9.3 — 2026-08-09
+
+### Değişen
+- **Görev/alt görev/mini görev mantığı yeniden kuruldu**: bir görevde artık ya mini görev (kontrol listesi) ya da alt görev olabiliyor, ikisi birden olamıyor — birini eklemeye çalışırken diğeri varsa engelleniyor ve açıklayıcı bir uyarı gösteriliyor.
+- Mini görevi veya alt görevi olan bir görevde **Durum Etiketi** artık elle seçilemiyor; yerine "Mini görevler takip edilmektedir" / "Alt görevler takip edilmektedir" pasif bir bilgi kutusu görünüyor (tamamlanma oranı zaten bunlardan otomatik hesaplanıyor). Alt görevi olan bir görev artık elle "Tamamlandı" yapılamıyor.
+- **Süre takibi artık varsayılan kapalı**: her görevde otomatik görünmek yerine, kullanıcı "Bu görev için süre takibi yapmak istiyor musunuz?" onay kutusunu işaretlerse süre kaydı alanı beliriyor.
+- Görev düzenleme/ekleme modalı, birbirinden görsel olarak ayrılmış 9 bölüme ayrıldı: Başlık ve Açıklama, Kategori/Durum/Öncelik, Tekrarlama, Tarihler, Mini Görevler, Süre, Ekli Dosyalar, Tamamlanma Oranı, Tuşlar.
+- Modalın en altındaki tamamlanma oranı göstergesi (yüzde metni ve elle ayarlanan kaydırıcı) yaklaşık 3 kat büyütüldü.
+- Mini görev ekleme kutusundaki "Yeni madde ekle..." yazısı "Yeni mini görev ekle" olarak değiştirildi.
+- Yukarıdaki tüm değişiklikler **atanan/atadığın görevler** (Çalışanlar panelindeki görev atama modalı) için de birebir uygulandı; bu görevlere artık isteğe bağlı süre takibi de eklenebiliyor (daha önce bu özellik atanan görevlerde yoktu).
+
 ## v1.9.2 — 2026-08-07
 
 ### Eklenen
